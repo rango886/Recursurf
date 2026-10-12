@@ -1,10 +1,7 @@
 # BrowserX：让 AI agent 借你的浏览器上网
 
-> 🎬 **先看 4 分半的宣传片**：clone 下来后双击 [`promo/index-single.html`](promo/index-single.html)，用 Chrome / Edge 打开就能放（单文件，不用起服务器，带旁白和中英字幕）。
-> 在线看：[raw.githack.com/rango886/BrowserX/main/promo/index-single.html](https://raw.githack.com/rango886/BrowserX/main/promo/index-single.html)
-> 下面的 README 是按宣传片的顺序写的。
+> 🎬 **推荐看看宣传片**：clone 下来后双击 [`promo/index-single.html`](promo/index-single.html) 或在线看 [BrowserX](https://raw.githack.com/rango886/BrowserX/main/promo/index-single.html)。
 
-项目叫 **BrowserX**，命令行工具叫 `bx`。
 
 ---
 
@@ -20,13 +17,11 @@
 
 **BrowserX 就是让 AI agent 借你的浏览器上网。**
 
-## 2. 同一句话，再问一次
+## 2. 装上 BrowserX 之后
 
 装上 BrowserX 之后，同一句话再问一次。这回 AI 借你的浏览器，同时去 X、Reddit、HN、知乎、B 站、V2EX 搜，交回来一份报告：哪里在夸、哪里在骂、跑分和实测哪里对不上，每一条都带出处。
 
 技术排查（“部署全挂了，是云服务出事了吗？”）、新闻舆情（“xx 手机发布，大家怎么看？”）、股票异动（“xx 科技今天为什么涨停？”）也都是一句话的事。
-
-> 宣传片里的 xxx模型、应用市场这些案例是虚构的；`bx` 的输出格式都照真实运行的样子写。
 
 ## 3. 原理：跟着一条命令走一遍
 
@@ -345,4 +340,4 @@ npm test     # 启动本地测试站点 + 无头 Chrome，跑端到端测试
 - 后台标签防降速：现在 bx 后台开的标签会打开 `Emulation.setFocusEmulationEnabled`（`BX_NO_FOCUS_EMULATION=1` 关掉）；在懒加载页面上的效果还要实测，必要时再加 `Page.setWebLifecycleState`
 - 写操作确认、标签归属和借用、按域名的隐私策略；标签编号跨重启不变
 
-设计思路见 [docs/design-v2.md](docs/design-v2.md)。
+设计思路见 [docs/design.md](docs/design.md)。
