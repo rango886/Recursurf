@@ -1,0 +1,4 @@
+# 截图和 TTS 缓存（旁白已经内嵌在 js/vo.js 里）
+shots/
+tts/out/
+tts/out_try/

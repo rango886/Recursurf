@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>BrowserX · 给 AI agent 用的浏览器</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="css/style.css">
+<script>window.onerror = (m, s, l) => { window.__err = (window.__err || '') + m + ' @' + (s || '').split('/').pop() + ':' + l + '; ' }</script>
+</head>
+<body>
+<div id="stage">
+  <div id="topbar">
+    <span id="brand">▌BX<b>/</b>PROMO</span>
+    <span id="chapter"></span>
+    <span id="tc"><i id="rec">●</i> <span id="tcv">00:00:00</span></span>
+  </div>
+  <canvas id="cv"></canvas>
+  <div id="crt"></div>
+  <div id="subbar">
+    <div id="progress"><div id="ticks"></div><i id="bar"></i></div>
+    <div id="sub-zh"></div>
+    <div id="sub-en"></div>
+  </div>
+  <div id="start">
+    <pre id="start-logo"></pre>
+    <div id="start-sub">给 AI agent 用的浏览器 · 宣传片</div>
+    <div id="start-btn">[ 加载中 … ]</div>
+    <div id="start-hint">
+      建议 <b>全屏（F）</b> · 戴耳机 ｜ <b>空格</b> 暂停 · <b>← →</b> 快退 / 快进 5 秒 · <b>1–9 0</b> 跳章节 ·
+      <b>S</b> 字幕 · <b>E</b> 英文字幕 · <b>M</b> 静音
+    </div>
+  </div>
+  <div id="paused">❚❚ 暂停</div>
+</div>
+<script src="js/vo.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/data.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/scenes.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

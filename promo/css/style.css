@@ -1,0 +1,38 @@
+html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+body { display: flex; align-items: center; justify-content: center; font-family: "Sarasa Term SC", "Cascadia Mono", Consolas, "Microsoft YaHei", monospace; color: #3dff8a; }
+#stage { position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px; transform-origin: 0 0; background: #000; overflow: hidden; }
+#cv { position: absolute; left: 0; top: 50px; width: 1920px; height: 860px; display: block; }
+
+/* 上黑边：章节 + 时间码 */
+#topbar { position: absolute; left: 0; top: 0; width: 1920px; height: 50px; display: flex; align-items: center; gap: 36px; padding: 0 40px; box-sizing: border-box; font-size: 19px; letter-spacing: 1px; color: #2f8f58; }
+#brand { color: #3dff8a; } #brand b { color: #ffb02e; font-weight: normal; }
+#chapter { color: #ffb02e; flex: 1; transition: opacity .4s; }
+#tc { color: #2f8f58; } #rec { color: #ff4d5e; font-style: normal; animation: blink 1.2s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* 下黑边：字幕。画面里的东西永远不会进到这里 */
+#subbar { position: absolute; left: 0; top: 910px; width: 1920px; height: 170px; text-align: center; }
+#sub-zh { margin-top: 30px; font-family: "Sarasa UI SC", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif; font-size: 42px; font-weight: 600; color: #effff4; letter-spacing: 2px; text-shadow: 0 0 14px rgba(61,255,138,.45); min-height: 56px; transition: opacity .18s; }
+#sub-en { margin-top: 8px; font-family: "Segoe UI", "Sarasa UI SC", sans-serif; font-size: 24px; color: #6fbf8c; letter-spacing: .5px; min-height: 30px; transition: opacity .18s; }
+.hide { opacity: 0; }
+#progress { position: absolute; left: 0; top: 0; width: 100%; height: 3px; background: rgba(61,255,138,.08); cursor: pointer; opacity: .55; transition: opacity .3s, height .2s; }
+#progress:hover, body.mouse #progress { opacity: 1; height: 8px; }
+#bar { position: absolute; left: 0; top: 0; height: 100%; width: 0; background: #3dff8a; box-shadow: 0 0 8px #3dff8a; }
+#ticks i { position: absolute; top: 0; width: 2px; height: 100%; background: #ffb02e; opacity: .7; }
+
+/* CRT：扫描线 + 暗角 + 轻微闪烁 */
+#crt { position: absolute; left: 0; top: 50px; width: 1920px; height: 860px; pointer-events: none;
+  background:
+    repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,.28) 3px, rgba(0,0,0,0) 4px),
+    radial-gradient(ellipse at center, rgba(0,0,0,0) 58%, rgba(0,0,0,.55) 100%);
+  animation: flicker .12s infinite alternate; mix-blend-mode: multiply; }
+@keyframes flicker { from { opacity: .92; } to { opacity: 1; } }
+
+/* 开始页 */
+#start { position: absolute; inset: 0; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 5; cursor: pointer; }
+#start-logo { margin: 0; font-size: 13px; line-height: 13px; color: #9dffc4; text-shadow: 0 0 10px #3dff8a; font-weight: bold; }
+#start-sub { margin-top: 40px; font-size: 30px; color: #effff4; letter-spacing: 6px; }
+#start-btn { margin-top: 60px; font-size: 34px; color: #ffb02e; animation: blink 1.1s steps(1) infinite; }
+#start-hint { margin-top: 70px; font-size: 18px; color: #2f8f58; } #start-hint b { color: #3dff8a; font-weight: normal; }
+#paused { position: absolute; left: 50%; top: 470px; transform: translateX(-50%); font-size: 40px; color: #ffb02e; display: none; text-shadow: 0 0 12px #ffb02e; z-index: 4; }
+body.paused #paused, body.ended #paused { display: block; }
