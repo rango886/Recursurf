@@ -80,6 +80,8 @@ export class TabSession {
   net = new Map<string, NetEntry>()
   netOrder: NetEntry[] = []
   netSeq = 0
+  /** 用户第一次用 net log / net wait 时的序号；net log 只列它之后的请求（-1 = 还没用过） */
+  netLogFrom = -1
   netWaiters: Waiter[] = []
   routes: Route[] = []
   routeSeq = 0

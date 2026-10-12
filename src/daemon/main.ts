@@ -176,6 +176,8 @@ function session(id?: string): TabSession {
 
 async function withChanges<T>(s: TabSession, fn: () => Promise<T>, opts: { settle?: boolean; snap?: boolean } = {}) {
   await s.ensure('Page')
+  // 开着 Network，settle 才能等到点击触发的 fetch/XHR（GitHub 这类 Turbo / pjax 站点是先 fetch 再 pushState 换页）
+  await s.ensure('Network').catch(() => {})
   const d = s.driver
   s.notes = []
   const tabsBefore = await d.listTabs().catch(() => [])
@@ -198,6 +200,7 @@ async function withChanges<T>(s: TabSession, fn: () => Promise<T>, opts: { settl
   if (url !== before.url) changes.url = url
   if (title !== before.title) changes.title = title
   if (s.navCount !== before.nav) changes.navigated = true
+  else if (url !== before.url && url.split(/[?#]/)[0] !== before.url.split(/[?#]/)[0]) { changes.navigated = 'soft'; s.clearRefs() }
   if (s.dialogs.length > before.dialogs) changes.dialogs = s.dialogs.slice(before.dialogs).map(x => `${x.type}: ${x.message} (${x.handled})`)
   const after = await d.listTabs().catch(() => [])
   const fresh = after.filter(t => !before.tabs.has(t.nativeId))
@@ -211,7 +214,8 @@ async function withChanges<T>(s: TabSession, fn: () => Promise<T>, opts: { settl
       }
   }
   const notes = [...s.notes]
-  if (changes.navigated) notes.push('页面已跳转，之前的编号失效，需要重新 snapshot')
+  if (changes.navigated === true) notes.push('页面已跳转，之前的编号失效，需要重新 snapshot')
+  else if (changes.navigated === 'soft') notes.push('前端路由跳转（没有整页刷新），页面内容多半整体换了，建议重新 snapshot')
   if (fresh.length) notes.push(`开了新标签 ${changes.newTabs.map((t: any) => t.id).join(' ')}（在后台），用 -t ${changes.newTabs[0].id} 操作它`)
   if (notes.length) changes.note = notes.join('；')
   const out: any = { ok: true, ...(result as any), changes: Object.keys(changes).length ? changes : undefined }
@@ -603,9 +607,11 @@ const methods: Record<string, Handler> = {
   // ---------- 网络 ----------
   'net.log': async ({ tab, filter, type, status, limit = 50, failed }) => {
     const s = session(tab)
-    const first = !s.enabled.has('Network')
     await s.ensure('Network')
-    let list = s.netOrder
+    // 操作时为了等请求会提前开启 Network，但对用户来说，网络记录从第一次用 net 命令时才算开始
+    const first = s.netLogFrom < 0
+    if (first) s.netLogFrom = s.netSeq
+    let list = s.netOrder.filter(e => e.id > s.netLogFrom)
     if (filter) list = list.filter(e => e.url.includes(filter))
     if (type) {
       const types = String(type).split(',')
@@ -650,6 +656,7 @@ const methods: Record<string, Handler> = {
   'net.wait': async ({ tab, match, timeout, body = true }) => {
     const s = session(tab)
     await s.ensure('Network')
+    if (s.netLogFrom < 0) s.netLogFrom = s.netSeq
     const e = await s.waitForResponse(match, timeout)
     if (!body) return { id: e.id, url: e.url, status: e.status }
     return methods['net.show']({ tab: s.shortId, id: e.id })
