@@ -4,7 +4,7 @@
 // 每个命中单元前后各带 context 个单元，相邻窗口合并。输出总字数受 budget 限制。
 
 export interface GrepMatch {
-  /** 这一块在全文里的起始字符位置（可以拿去 bx read --offset 接着读） */
+  /** 这一块在全文里的起始字符位置（可以拿去 rsf read --offset 接着读） */
   offset: number
   text: string
   /** 这一块里命中了几处 */

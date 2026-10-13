@@ -1,15 +1,15 @@
 # 录制 → 调查报告
 
-> 第二版里 trace 先原样保留（以后看还有没有用）。摸索网站更常用的办法是 `bx run` 里直接试，见 [lib.md](lib.md)。
-> 以前的 `bx script new / test` 已经删掉：报告读懂以后，把取数据的代码写成 `lib/<域名>.js` 里的函数就行。
+> 第二版里 trace 先原样保留（以后看还有没有用）。摸索网站更常用的办法是 `rsf run` 里直接试，见 [lib.md](lib.md)。
+> 以前的 `rsf script new / test` 已经删掉：报告读懂以后，把取数据的代码写成 `lib/<域名>.js` 里的函数就行。
 
 把"在网站上摸索一遍"整理成一份调查报告：
 
 ```
-bx trace start      录制：bx 的操作、用户手动的操作、所有接口请求和响应体、看到的内容
-   … 用 bx 操作，或者让用户自己在浏览器里点一遍 …
-bx trace stop       停止，自动整理成调查报告（report.md）
-   … AI 读报告，在 bx run 里试通，写成函数库里的函数 …
+rsf trace start      录制：rsf 的操作、用户手动的操作、所有接口请求和响应体、看到的内容
+   … 用 rsf 操作，或者让用户自己在浏览器里点一遍 …
+rsf trace stop       停止，自动整理成调查报告（report.md）
+   … AI 读报告，在 rsf run 里试通，写成函数库里的函数 …
 ```
 
 分工：**程序**做去噪、归纳、溯源这些体力活，**AI** 负责理解意图、写代码。
@@ -17,24 +17,24 @@ bx trace stop       停止，自动整理成调查报告（report.md）
 ## 1. 录制
 
 ```bash
-bx tab open https://www.bilibili.com/v/popular/rank/all
-bx trace start rank --goal "B站排行榜：排名、标题、UP主、播放量，支持切换分区"
-bx reload                        # 建议先 reload：页面一开始加载的接口也能录到
-bx read                          # 拿到数据后 read 一次，报告靠它做"数据溯源"
-bx trace mark "切换到动画分区"     # 可选：给关键步骤加标注
-bx click e418
-bx read
-bx trace stop
+rsf tab open https://www.bilibili.com/v/popular/rank/all
+rsf trace start rank --goal "B站排行榜：排名、标题、UP主、播放量，支持切换分区"
+rsf reload                        # 建议先 reload：页面一开始加载的接口也能录到
+rsf read                          # 拿到数据后 read 一次，报告靠它做"数据溯源"
+rsf trace mark "切换到动画分区"     # 可选：给关键步骤加标注
+rsf click e418
+rsf read
+rsf trace stop
 ```
 
 - **`--goal` 一定要写**：它记下了这次摸索的意图，这是程序自己推断不出来的。
-- 录制期间用 bx 操作过的标签会**自动加入**录制；点击打开的新标签也会自动加入。用户自己开的标签用 `bx trace add t5` 加进来。
+- 录制期间用 rsf 操作过的标签会**自动加入**录制；点击打开的新标签也会自动加入。用户自己开的标签用 `rsf trace add t5` 加进来。
 - **用户手动演示也可以**：录制中的标签里，用户的点击、输入、提交、按键、滚动都会被记下来，包括元素的文字和 CSS 选择器。停止录制时会自动抓一次页面文字，当作"看到的内容"。
-- 保存位置：`~/.bx/traces/<名字>/`（`trace.json` + `bodies/` + `report.md`）。
+- 保存位置：`~/.rsf/traces/<名字>/`（`trace.json` + `bodies/` + `report.md`）。
 
 ## 2. 调查报告
 
-`bx trace digest rank` 可以重新生成并查看报告。报告里有这些内容：
+`rsf trace digest rank` 可以重新生成并查看报告。报告里有这些内容：
 
 | 部分 | 内容 |
 |---|---|
@@ -54,17 +54,17 @@ bx trace stop
 ## 3. 查细节
 
 ```bash
-bx trace show rank 34 --path data.list[0]    # 看某个请求的完整响应（或其中一部分）
-bx trace find rank "风的来信"                 # 在所有响应 / 请求网址 / 请求体里搜一段文字
-bx trace list
-bx trace rm rank
+rsf trace show rank 34 --path data.list[0]    # 看某个请求的完整响应（或其中一部分）
+rsf trace find rank "风的来信"                 # 在所有响应 / 请求网址 / 请求体里搜一段文字
+rsf trace list
+rsf trace rm rank
 ```
 
 ## 4. 写成函数
 
-报告读懂以后，按它给的方案在 `bx run` 里试，试通了存进 `~/.bx/lib/<域名>.js`（写法见 [lib.md](lib.md)）：
+报告读懂以后，按它给的方案在 `rsf run` 里试，试通了存进 `~/.rsf/lib/<域名>.js`（写法见 [lib.md](lib.md)）：
 
-- **没有签名的 JSON 接口** → `bx.tab('<域名>')` + `tab.fetch()` 直接调；翻页参数换成变量，来自输入的参数换成函数参数。
+- **没有签名的 JSON 接口** → `rsf.tab('<域名>')` + `tab.fetch()` 直接调；翻页参数换成变量，来自输入的参数换成函数参数。
 - **有签名** → 先试 `tab.fetch`（很多接口在页面里带着 cookie 直接请求就能用）；不行就用 `tab.collect()`：让页面自己发请求，我们接住返回，按报告里的操作步骤（带选择器）触发下一页。
 - **数据在 HTML 里** → 打开页面后用 `tab.eval` 读。
 
@@ -74,4 +74,4 @@ bx trace rm rank
 
 1. 录制时，报告指出数据在 `x/web-interface/ranking/v2` 的 `data.list[]`，有 `w_rid` 签名，并且“`rid` 随操作变化：点‘动画’ → 1005，点‘游戏’ → 1008”。
 2. 因为 B 站的 wbi 签名已经实现过了（`lib/_bili-wbi.js`），直接调接口，0.3 秒。
-3. 用 bx 把每个分区点一遍，从网络记录里读出完整的分区 → rid 对应表，写进文件顶部的站点笔记。
+3. 用 rsf 把每个分区点一遍，从网络记录里读出完整的分区 → rid 对应表，写进文件顶部的站点笔记。

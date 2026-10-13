@@ -1,19 +1,19 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import type { TabSession, NetEntry } from './session.ts'
-import { BX_HOME, ensureDir } from '../common/paths.ts'
-import { BxError } from '../common/util.ts'
+import { RSF_HOME, ensureDir } from '../common/paths.ts'
+import { RsfError } from '../common/util.ts'
 
 /**
  * trace 录制：把"做了什么 + 页面发了什么请求 + 看到了什么"都记下来，
  * 之后由 digest 整理成一份给 AI 看的调查报告。
  *
  * 记录的东西：
- * - action：通过 bx 做的操作（goto / click / fill …），带目标元素的描述
+ * - action：通过 rsf 做的操作（goto / click / fill …），带目标元素的描述
  * - user：用户在页面上手动做的操作（点击、输入、提交），适合"人演示一遍，AI 写脚本"
  * - navigate：主 frame 跳转
  * - observe：AI 看到的内容（read / snapshot / eval 的输出），用来做数据溯源
- * - mark：手动标注（bx trace mark "现在翻到第二页"）
+ * - mark：手动标注（rsf trace mark "现在翻到第二页"）
  * - requests：接口请求，xhr / fetch / document 的响应体单独存文件
  */
 
@@ -43,7 +43,7 @@ export interface TraceRequest {
   bodyNote?: string
 }
 
-const TRACES_DIR = () => ensureDir(path.join(BX_HOME, 'traces'))
+const TRACES_DIR = () => ensureDir(path.join(RSF_HOME, 'traces'))
 const STATIC = new Set(['image', 'font', 'stylesheet', 'media', 'manifest', 'texttrack', 'ping', 'cspviolationreport', 'preflight', 'signedexchange'])
 const BODY_TYPES = new Set(['xhr', 'fetch', 'document', 'other', 'eventsource'])
 const MAX_BODY = 3 * 1024 * 1024
@@ -53,8 +53,8 @@ const KEEP_HEADERS = /^(content-type|authorization|x-.*|referer|origin|accept|cs
 
 /** 注入页面：记录用户手动操作（通过 binding 回传） */
 export const USER_LISTENER = `(() => {
-  if (window.__bx_trace_on) return; window.__bx_trace_on = true;
-  const send = o => { try { __bx_trace(JSON.stringify(o)) } catch (e) {} };
+  if (window.__rsf_trace_on) return; window.__rsf_trace_on = true;
+  const send = o => { try { __rsf_trace(JSON.stringify(o)) } catch (e) {} };
   const cssPath = el => {
     if (!el || el.nodeType !== 1) return '';
     if (el.id && !/\\d{4,}/.test(el.id)) return '#' + CSS.escape(el.id);
@@ -87,7 +87,7 @@ export const USER_LISTENER = `(() => {
   let st; addEventListener('scroll', () => { clearTimeout(st); st = setTimeout(() => send({ kind: 'scroll', y: Math.round(scrollY), max: document.documentElement.scrollHeight - innerHeight }), 600) }, true);
 })()`
 
-/** 在页面里描述一个元素（给 click / fill 这些 bx 操作用） */
+/** 在页面里描述一个元素（给 click / fill 这些 rsf 操作用） */
 export const DESCRIBE_FN = `function(){
   const el = this;
   const cssPath = e0 => { const parts = [];
@@ -120,7 +120,7 @@ export class Trace {
     this.name = name
     this.goal = goal
     this.dir = path.join(TRACES_DIR(), name)
-    if (fs.existsSync(path.join(this.dir, 'trace.json'))) throw new BxError('EXISTS', `trace ${name} 已存在`, '换个名字，或先 `bx trace rm ' + name + '`')
+    if (fs.existsSync(path.join(this.dir, 'trace.json'))) throw new RsfError('EXISTS', `trace ${name} 已存在`, '换个名字，或先 `rsf trace rm ' + name + '`')
     ensureDir(path.join(this.dir, 'bodies'))
   }
 
@@ -137,7 +137,7 @@ export class Trace {
     await s.ensure('Network')
     await s.ensure('Runtime')
     try {
-      await s.send('Runtime.addBinding', { name: '__bx_trace' })
+      await s.send('Runtime.addBinding', { name: '__rsf_trace' })
       const { identifier } = await s.send('Page.addScriptToEvaluateOnNewDocument', { source: USER_LISTENER, runImmediately: true })
       this.injected.set(s.shortId, identifier)
       await s.evaluate(USER_LISTENER).catch(() => {})
@@ -160,7 +160,7 @@ export class Trace {
     this.add({ tab: s.shortId, type: 'dialog', dialog: d.type, message: d.message })
   }
   onUser(s: TabSession, payload: string) {
-    if (s.acting > 0 || Date.now() - s.actedAt < 400) return // bx 自己的操作，不重复记录
+    if (s.acting > 0 || Date.now() - s.actedAt < 400) return // rsf 自己的操作，不重复记录
     try {
       const o = JSON.parse(payload)
       // 连续的滚动只记最后一次
@@ -224,7 +224,7 @@ export class Trace {
       s.tracer = undefined
       const ident = this.injected.get(id)
       if (ident) await s.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: ident }).catch(() => {})
-      await s.send('Runtime.removeBinding', { name: '__bx_trace' }).catch(() => {})
+      await s.send('Runtime.removeBinding', { name: '__rsf_trace' }).catch(() => {})
     }
     // 等一下还没结束的响应体
     await new Promise(r => setTimeout(r, 300))
@@ -270,6 +270,6 @@ export function listTraces() {
 
 export function traceDir(name: string) {
   const d = path.join(TRACES_DIR(), name)
-  if (!fs.existsSync(path.join(d, 'trace.json'))) throw new BxError('NO_TRACE', `没有 trace ${name}`, '`bx trace list` 查看已有的录制')
+  if (!fs.existsSync(path.join(d, 'trace.json'))) throw new RsfError('NO_TRACE', `没有 trace ${name}`, '`rsf trace list` 查看已有的录制')
   return d
 }

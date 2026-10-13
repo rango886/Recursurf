@@ -1,6 +1,6 @@
 import type { Driver } from './types.ts'
 import type { Trace } from './trace.ts'
-import { BxError, globToRegExp, sleep, urlPattern } from '../common/util.ts'
+import { RsfError, globToRegExp, sleep, urlPattern } from '../common/util.ts'
 
 export interface NetEntry {
   id: number
@@ -69,7 +69,7 @@ export class TabSession {
   // ---- 输入状态：按住的修饰键、鼠标位置 ----
   mods = 0
   mouse = { x: 0, y: 0, buttons: 0 }
-  /** 这个标签收到过 bx 发的鼠标按下（有的浏览器在这之前不接收键盘输入） */
+  /** 这个标签收到过 rsf 发的鼠标按下（有的浏览器在这之前不接收键盘输入） */
   kbdPrimed = false
   private eventWaiters: { method: string; resolve: (p: any) => void }[] = []
 
@@ -90,7 +90,7 @@ export class TabSession {
   mainFrameId = ''
   /** 正在录制 trace 时指向录制器 */
   tracer?: Trace
-  /** bx 自己正在操作（用来区分用户手动操作） */
+  /** rsf 自己正在操作（用来区分用户手动操作） */
   acting = 0
   actedAt = 0
   private extraCookies = new Map<string, string[]>()
@@ -167,7 +167,7 @@ export class TabSession {
       setTimeout(() => {
         if (!this.eventWaiters.includes(w)) return
         this.eventWaiters = this.eventWaiters.filter(x => x !== w)
-        reject(new BxError('TIMEOUT', `等待 ${method} 超时 (${timeout}ms)`))
+        reject(new RsfError('TIMEOUT', `等待 ${method} 超时 (${timeout}ms)`))
       }, timeout)
     })
   }
@@ -176,8 +176,8 @@ export class TabSession {
     const id = this.refs.get(ref.replace(/^@/, ''))
     if (id === undefined) {
       if (this.refs.size === 0)
-        throw new BxError('STALE_REF', `编号 ${ref} 无效：当前页面还没有 snapshot，或页面已经跳转`, '先执行 `bx snapshot` 获取新编号')
-      throw new BxError('UNKNOWN_REF', `编号 ${ref} 不存在`, '执行 `bx snapshot` 查看当前可用编号')
+        throw new RsfError('STALE_REF', `编号 ${ref} 无效：当前页面还没有 snapshot，或页面已经跳转`, '先执行 `rsf snapshot` 获取新编号')
+      throw new RsfError('UNKNOWN_REF', `编号 ${ref} 不存在`, '执行 `rsf snapshot` 查看当前可用编号')
     }
     return id
   }
@@ -299,7 +299,7 @@ export class TabSession {
         break
       }
       case 'Runtime.bindingCalled':
-        if (p.name === '__bx_trace') this.tracer?.onUser(this, p.payload)
+        if (p.name === '__rsf_trace') this.tracer?.onUser(this, p.payload)
         break
       case 'Fetch.requestPaused':
         this.onRequestPaused(p).catch(() => {})
@@ -326,7 +326,7 @@ export class TabSession {
       setTimeout(() => {
         if (!this.netWaiters.includes(w)) return
         this.netWaiters = this.netWaiters.filter(x => x !== w)
-        reject(new BxError('TIMEOUT', `等待匹配 ${pattern} 的请求超时 (${timeout}ms)`, '用 `bx net log` 看看实际发出了哪些请求'))
+        reject(new RsfError('TIMEOUT', `等待匹配 ${pattern} 的请求超时 (${timeout}ms)`, '用 `rsf net log` 看看实际发出了哪些请求'))
       }, timeout)
     })
   }
@@ -336,7 +336,7 @@ export class TabSession {
       const r = await this.send('Network.getResponseBody', { requestId: e.requestId })
       return { body: r.body, base64: r.base64Encoded }
     } catch (err: any) {
-      throw new BxError('NO_BODY', `拿不到请求 #${e.id} 的响应体：${err.message}`, '响应体只在页面跳转前保留；重定向和预检请求没有响应体')
+      throw new RsfError('NO_BODY', `拿不到请求 #${e.id} 的响应体：${err.message}`, '响应体只在页面跳转前保留；重定向和预检请求没有响应体')
     }
   }
 
@@ -387,12 +387,12 @@ export class TabSession {
     })
     if (r.exceptionDetails) {
       const d = r.exceptionDetails
-      throw new BxError('JS_ERROR', `页面 JS 报错：${d.exception?.description || d.text}`.slice(0, 1500))
+      throw new RsfError('JS_ERROR', `页面 JS 报错：${d.exception?.description || d.text}`.slice(0, 1500))
     }
     // replMode 下表达式结果是 Promise 时不会自动等待，这里补上
     if (opts.replMode && r.result.subtype === 'promise' && r.result.objectId) {
       const a = await this.send('Runtime.awaitPromise', { promiseObjectId: r.result.objectId, returnByValue: true })
-      if (a.exceptionDetails) throw new BxError('JS_ERROR', `页面 JS 报错：${a.exceptionDetails.exception?.description || a.exceptionDetails.text}`.slice(0, 1500))
+      if (a.exceptionDetails) throw new RsfError('JS_ERROR', `页面 JS 报错：${a.exceptionDetails.exception?.description || a.exceptionDetails.text}`.slice(0, 1500))
       return a.result.value
     }
     if (opts.replMode && r.result.objectId) {
@@ -410,7 +410,7 @@ export class TabSession {
     try {
       objectId = (await this.send('DOM.resolveNode', { backendNodeId })).object.objectId
     } catch {
-      throw new BxError('STALE_REF', '元素已经不在页面上了（页面可能刷新或局部重绘过）', '重新执行 `bx snapshot`')
+      throw new RsfError('STALE_REF', '元素已经不在页面上了（页面可能刷新或局部重绘过）', '重新执行 `rsf snapshot`')
     }
     const r = await this.send('Runtime.callFunctionOn', {
       objectId,
@@ -421,7 +421,7 @@ export class TabSession {
       userGesture: true,
     })
     this.send('Runtime.releaseObject', { objectId }).catch(() => {})
-    if (r.exceptionDetails) throw new BxError('JS_ERROR', r.exceptionDetails.exception?.description || r.exceptionDetails.text)
+    if (r.exceptionDetails) throw new RsfError('JS_ERROR', r.exceptionDetails.exception?.description || r.exceptionDetails.text)
     return r.result.value
   }
 
@@ -436,7 +436,7 @@ export class TabSession {
   /** 等页面稳定：主 frame 加载完 + 接口请求告一段落 */
   async settle(maxMs = 8000) {
     const t0 = Date.now()
-    const dbg = process.env.BX_DEBUG ? (m: string) => console.log(new Date().toISOString(), 'settle', this.shortId, Date.now() - t0, m) : () => {}
+    const dbg = process.env.RSF_DEBUG ? (m: string) => console.log(new Date().toISOString(), 'settle', this.shortId, Date.now() - t0, m) : () => {}
     const end = Date.now() + maxMs
     await sleep(120)
     dbg(`loading=${this.loading}`)

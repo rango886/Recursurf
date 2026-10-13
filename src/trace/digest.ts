@@ -149,7 +149,7 @@ export function candidatesFrom(outputs: string[], limit = 500, exclude: string[]
       .replace(/^"+|"+$/g, '')
       .trim()
     if (s.length < 5 || s.length > 200) return
-    if (skip.has(s) || BX_LABELS.test(s)) return
+    if (skip.has(s) || RSF_LABELS.test(s)) return
     if (/^https?:\/\/\S+$/.test(s) && (s.length > 150 || skip.has(s.replace(/#.*$/, '')))) return
     if (/^[\d\s:.\-/,]+$/.test(s) && s.replace(/\D/g, '').length < 6) return // 太短的纯数字 / 时间
     set.add(s)
@@ -168,7 +168,7 @@ export function candidatesFrom(outputs: string[], limit = 500, exclude: string[]
     } catch {}
     if (j !== undefined && typeof j === 'object') {
       for (const [p, v] of leaves(j)) {
-        // bx 自己输出里的说明性字段不算"看到的内容"
+        // rsf 自己输出里的说明性字段不算"看到的内容"
         if (/^(sections|hints|warnings|via|type|more|changes|note|refs|truncated|range|total)\b/.test(p)) continue
         if (typeof v === 'string') walkStr(v)
         else if (typeof v === 'number' && String(v).length >= 6) push(String(v))
@@ -179,7 +179,7 @@ export function candidatesFrom(outputs: string[], limit = 500, exclude: string[]
   // 长的、信息量大的优先
   return [...set].sort((a, b) => score(b) - score(a)).slice(0, limit)
 }
-const BX_LABELS = /^(整页可见文字|JSON-LD 结构化数据|分段（bx read|…\(还有更多|…\(第 |\(已截断|\(跨域 iframe|url: |type: \w+ · via)/
+const RSF_LABELS = /^(整页可见文字|JSON-LD 结构化数据|分段（rsf read|…\(还有更多|…\(第 |\(已截断|\(跨域 iframe|url: |type: \w+ · via)/
 
 function score(s: string) {
   const cjk = (s.match(/[\u4e00-\u9fff]/g) || []).length
@@ -321,7 +321,7 @@ function renderShape(v: any, hot: Set<string>, maxLines = 50): string[] {
   if (Array.isArray(v)) walk(v, '', '(根)', '', 0)
   else if (v && typeof v === 'object') walkObj(v, '', '', 0)
   else lines.push(`${typeOf(v)} 例 ${sample(v)}`)
-  if (lines.length >= maxLines) lines.push('…（结构太大，已截断；用 bx trace show 看完整内容）')
+  if (lines.length >= maxLines) lines.push('…（结构太大，已截断；用 rsf trace show 看完整内容）')
   return lines
 }
 
@@ -510,12 +510,12 @@ export function digestTrace(dir: string): Digest {
 
   P(`# trace 调查报告：${tr.name}`, '')
   if (tr.goal) P(`**目标**：${tr.goal}`, '')
-  P(`时长 ${tr.duration}s · 标签 ${tr.tabs.join(', ') || '-'} · ${steps.filter(s => s.type === 'action').length} 个 bx 操作 · ${steps.filter(s => s.type === 'user').length} 个手动操作 · 请求 ${all.length} 个（去掉 ${noise.length} 个埋点/静态资源，剩 ${groups.size} 个接口，保存了 ${bodies} 个响应体）`)
+  P(`时长 ${tr.duration}s · 标签 ${tr.tabs.join(', ') || '-'} · ${steps.filter(s => s.type === 'action').length} 个 rsf 操作 · ${steps.filter(s => s.type === 'user').length} 个手动操作 · 请求 ${all.length} 个（去掉 ${noise.length} 个埋点/静态资源，剩 ${groups.size} 个接口，保存了 ${bodies} 个响应体）`)
   P(`溯源：从看到的内容里取了 ${candidates.length} 条文字，${covered.size} 条在响应里找到了出处${candidates.length ? `（${Math.round((covered.size / candidates.length) * 100)}%）` : ''}`, '')
 
   // ---- 结论 ----
   P('## 1. 结论（先看这里）', '')
-  if (!candidates.length) P('- ⚠ 录制期间没有"看到的内容"（没有 read / snapshot / eval，停止时也没取到页面文字），没法做数据溯源。下次录制时，拿到数据后执行一次 `bx read`。')
+  if (!candidates.length) P('- ⚠ 录制期间没有"看到的内容"（没有 read / snapshot / eval，停止时也没取到页面文字），没法做数据溯源。下次录制时，拿到数据后执行一次 `rsf read`。')
   if (!dataEps.length && candidates.length) P('- 看到的内容在所有保存的响应里都没找到：可能是页面 JS 计算出来的、在 WebSocket 里、或者在录制开始之前就加载好了。建议：录制开始后先 reload 一次，或者直接用 DOM 提取（tab.eval）。')
   for (const g of dataEps.slice(0, 4)) {
     const top = [...g.hits.entries()].sort((a, b) => b[1].size - a[1].size).slice(0, 4)
@@ -604,9 +604,9 @@ export function digestTrace(dir: string): Digest {
   }
 
   P('## 下一步', '')
-  P(`- 看某个响应的完整内容：\`bx trace show ${tr.name} <请求号> [--path data.list]\``)
-  P(`- 在所有响应里搜一段文字：\`bx trace find ${tr.name} "文字"\``)
-  P(`- 在 \`bx run\` 里按上面的结论试一遍（bx.tab / tab.fetch / tab.collect / tab.eval），试通了写成 \`~/.bx/lib/<域名>.js\` 里的函数`)
+  P(`- 看某个响应的完整内容：\`rsf trace show ${tr.name} <请求号> [--path data.list]\``)
+  P(`- 在所有响应里搜一段文字：\`rsf trace find ${tr.name} "文字"\``)
+  P(`- 在 \`rsf run\` 里按上面的结论试一遍（rsf.tab / tab.fetch / tab.collect / tab.eval），试通了写成 \`~/.rsf/lib/<域名>.js\` 里的函数`)
   P(`- 写法参考：docs/lib.md`)
 
   const text = L.join('\n')

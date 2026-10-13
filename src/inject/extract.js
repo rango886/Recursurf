@@ -1,7 +1,7 @@
 // 在页面里执行的通用内容提取器。
-// 由 daemon 注入：bxExtract(opts, { Readability, TurndownService })
+// 由 daemon 注入：rsfExtract(opts, { Readability, TurndownService })
 // 提取链：结构化数据(meta / JSON-LD / SSR 数据提示) → 正文(Readability) → 列表识别 → 页面大纲
-async function bxExtract(opts, L) {
+async function rsfExtract(opts, L) {
   const budget = opts.budget || 6000
   const clip = (t, n) => (t.length > n ? t.slice(0, n) + '…' : t)
   const squash = t => (t || '').replace(/[ \t\u00a0]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim()
@@ -39,7 +39,7 @@ async function bxExtract(opts, L) {
     if (v !== undefined) {
       let size = 0
       try { size = (typeof v === 'string' ? v : JSON.stringify(v)).length } catch {}
-      hints.push(`页面自带数据 window.${k}（约 ${size < 1024 ? size + ' 字节' : Math.round(size / 1024) + 'KB'}），可用 bx eval "window.${k}" 读取结构化数据`)
+      hints.push(`页面自带数据 window.${k}（约 ${size < 1024 ? size + ' 字节' : Math.round(size / 1024) + 'KB'}），可用 rsf eval "window.${k}" 读取结构化数据`)
     }
   }
 
@@ -212,7 +212,7 @@ async function bxExtract(opts, L) {
   if (opts.section) {
     let text = ''
     if (opts.section === 'comments') {
-      if (!comments) return { error: '没找到评论区（可能需要先滚动加载，试试 bx read --scroll 3）' }
+      if (!comments) return { error: '没找到评论区（可能需要先滚动加载，试试 rsf read --scroll 3）' }
       const c = cloneVisible(comments)
       text = c ? toMd(c) : ''
       if (!text && comments.shadowRoot) text = squash(comments.shadowRoot.textContent)

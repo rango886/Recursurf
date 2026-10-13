@@ -3,10 +3,10 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { spawn } from 'node:child_process'
 import type { Driver, TabInfo, CdpEventHandler } from '../types.ts'
-import { BxError, sleep, withTimeout } from '../../common/util.ts'
-import { BX_HOME, ensureDir, type LaunchOpts } from '../../common/paths.ts'
+import { RsfError, sleep, withTimeout } from '../../common/util.ts'
+import { RSF_HOME, ensureDir, type LaunchOpts } from '../../common/paths.ts'
 
-/** 直连 CDP：适合 bx 自己启动的专用浏览器 / 无头浏览器 */
+/** 直连 CDP：适合 rsf 自己启动的专用浏览器 / 无头浏览器 */
 export class CdpDriver implements Driver {
   kind = 'cdp' as const
   info: Record<string, any> = {}
@@ -34,7 +34,7 @@ export class CdpDriver implements Driver {
     if (!wsUrl.startsWith('ws')) {
       const base = wsUrl.replace(/\/$/, '')
       const res = await fetch(base + '/json/version').catch(() => null)
-      if (!res) throw new BxError('CDP_UNREACHABLE', `连不上 ${base}`, '确认浏览器启动时带了 --remote-debugging-port')
+      if (!res) throw new RsfError('CDP_UNREACHABLE', `连不上 ${base}`, '确认浏览器启动时带了 --remote-debugging-port')
       const v: any = await res.json()
       wsUrl = v.webSocketDebuggerUrl
       this.info = { product: v.Browser, endpoint: base }
@@ -46,7 +46,7 @@ export class CdpDriver implements Driver {
     })
     this.ws.on('message', d => this.onMessage(String(d)))
     this.ws.on('close', () => {
-      for (const p of this.pending.values()) p.reject(new BxError('BROWSER_GONE', `浏览器 ${this.name} 断开了`))
+      for (const p of this.pending.values()) p.reject(new RsfError('BROWSER_GONE', `浏览器 ${this.name} 断开了`))
       this.closeHandlers.forEach(h => h())
     })
     await this.raw('Target.setDiscoverTargets', { discover: true })
@@ -58,7 +58,7 @@ export class CdpDriver implements Driver {
       const p = this.pending.get(msg.id)
       if (!p) return
       this.pending.delete(msg.id)
-      if (msg.error) p.reject(new BxError('CDP_ERROR', `${p.method}: ${msg.error.message}`))
+      if (msg.error) p.reject(new RsfError('CDP_ERROR', `${p.method}: ${msg.error.message}`))
       else p.resolve(msg.result)
       return
     }
@@ -91,7 +91,7 @@ export class CdpDriver implements Driver {
     let begin: any
     let h: (m: string, p: any) => void
     const done = new Promise<{ file: string; url: string; name: string }>((resolve, reject) => {
-      const t = setTimeout(() => reject(new BxError('TIMEOUT', `等下载超时 (${timeout}ms)`, begin ? '下载开始了但没完成，文件可能很大' : '点击后没有开始下载')), timeout)
+      const t = setTimeout(() => reject(new RsfError('TIMEOUT', `等下载超时 (${timeout}ms)`, begin ? '下载开始了但没完成，文件可能很大' : '点击后没有开始下载')), timeout)
       h = (m, p) => {
         if (m === 'Browser.downloadWillBegin' && !begin) begin = p
         if (m !== 'Browser.downloadProgress' || !begin || p.guid !== begin.guid) return
@@ -100,7 +100,7 @@ export class CdpDriver implements Driver {
           resolve({ file: path.join(dir, begin.guid), url: begin.url, name: begin.suggestedFilename || begin.guid })
         } else if (p.state === 'canceled') {
           clearTimeout(t)
-          reject(new BxError('DOWNLOAD_FAILED', '下载被取消了'))
+          reject(new RsfError('DOWNLOAD_FAILED', '下载被取消了'))
         }
       }
       this.rootHandlers.push(h)
@@ -188,7 +188,7 @@ export class CdpDriver implements Driver {
 /** 找一个可用的 Chrome / Edge */
 export function findChrome(): string {
   const cands = [
-    process.env.BX_CHROME,
+    process.env.RSF_CHROME,
     'C:/Program Files/Google/Chrome/Application/chrome.exe',
     'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
     path.join(process.env.LOCALAPPDATA || '', 'Google/Chrome/Application/chrome.exe'),
@@ -199,14 +199,14 @@ export function findChrome(): string {
     '/usr/bin/chromium-browser',
   ].filter(Boolean) as string[]
   const hit = cands.find(p => fs.existsSync(p))
-  if (!hit) throw new BxError('NO_CHROME', '找不到 Chrome', '设置环境变量 BX_CHROME 指向浏览器可执行文件')
+  if (!hit) throw new RsfError('NO_CHROME', '找不到 Chrome', '设置环境变量 RSF_CHROME 指向浏览器可执行文件')
   return hit
 }
 
-/** 启动一个专用浏览器（独立 profile，登录状态会保存在 ~/.bx/profiles/<name>）。已经在运行就直接连上 */
+/** 启动一个专用浏览器（独立 profile，登录状态会保存在 ~/.rsf/profiles/<name>）。已经在运行就直接连上 */
 export async function launchBrowser(name: string, opts: LaunchOpts = {}): Promise<CdpDriver> {
-  const profile = opts.profile || ensureDir(path.join(BX_HOME, 'profiles', name))
-  const stateFile = path.join(profile, 'bx-launch.json')
+  const profile = opts.profile || ensureDir(path.join(RSF_HOME, 'profiles', name))
+  const stateFile = path.join(profile, 'rsf-launch.json')
   // 已经在运行？Chrome 会把调试端口写在 profile/DevToolsActivePort
   const ports: number[] = []
   try {
@@ -261,5 +261,5 @@ export async function launchBrowser(name: string, opts: LaunchOpts = {}): Promis
       return d
     }
   }
-  throw new BxError('LAUNCH_FAILED', `浏览器启动失败: ${exe}`, `可能这个 profile 正被另一个浏览器占用：${profile}`)
+  throw new RsfError('LAUNCH_FAILED', `浏览器启动失败: ${exe}`, `可能这个 profile 正被另一个浏览器占用：${profile}`)
 }

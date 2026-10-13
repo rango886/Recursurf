@@ -13,8 +13,8 @@ import { read } from './read.ts'
 import { resolveTarget } from './locate.ts'
 import { Trace, DESCRIBE_FN, listTraces, traceDir } from './trace.ts'
 import { digestTrace } from '../trace/digest.ts'
-import { BX_HOME, DAEMON_FILE, DEFAULT_PORT, ensureDir, readConfig } from '../common/paths.ts'
-import { BxError, sleep, urlMatches } from '../common/util.ts'
+import { RSF_HOME, DAEMON_FILE, DEFAULT_PORT, ensureDir, readConfig } from '../common/paths.ts'
+import { RsfError, sleep, urlMatches } from '../common/util.ts'
 
 const log = (...a: any[]) => console.log(new Date().toISOString(), ...a)
 
@@ -125,20 +125,20 @@ function wireDriver(d: Driver) {
 function getBrowser(name?: string): Driver {
   if (name) {
     const b = browsers.get(name)
-    if (!b) throw new BxError('NO_BROWSER', `没有叫 ${name} 的浏览器`, `已连接：${[...browsers.keys()].join(', ') || '(无)'}`)
+    if (!b) throw new RsfError('NO_BROWSER', `没有叫 ${name} 的浏览器`, `已连接：${[...browsers.keys()].join(', ') || '(无)'}`)
     return b
   }
   if (browsers.size === 0) throw noBrowser()
   if (currentTab && tabShort.has(currentTab)) return browsers.get(tabShort.get(currentTab)!.browser)!
   if (browsers.size === 1) return [...browsers.values()][0]
-  throw new BxError('AMBIGUOUS_BROWSER', `连着多个浏览器：${[...browsers.keys()].join(', ')}`, '用 --browser <名字> 指定')
+  throw new RsfError('AMBIGUOUS_BROWSER', `连着多个浏览器：${[...browsers.keys()].join(', ')}`, '用 --browser <名字> 指定')
 }
 
 function noBrowser() {
-  return new BxError(
+  return new RsfError(
     'NO_BROWSER',
     '还没有连接任何浏览器',
-    '两种方式：① 在日常 Chrome 里装 bx 插件（extension 目录），复用登录状态；② `bx browser launch` 启动一个专用浏览器',
+    '两种方式：① 在日常 Chrome 里装 rsf 插件（extension 目录），复用登录状态；② `rsf browser launch` 启动一个专用浏览器',
   )
 }
 
@@ -154,9 +154,9 @@ async function listAllTabs(browser?: string) {
 
 function tabRef(id?: string) {
   let tid = id ? (id.startsWith('t') ? id : 't' + id) : currentTab
-  if (!tid) throw new BxError('NO_TAB', '没有当前标签页', '`bx tab list` 看看有哪些，再 `bx tab use <id>`；或 `bx tab open <url>`')
+  if (!tid) throw new RsfError('NO_TAB', '没有当前标签页', '`rsf tab list` 看看有哪些，再 `rsf tab use <id>`；或 `rsf tab open <url>`')
   const t = tabShort.get(tid)
-  if (!t) throw new BxError('NO_TAB', `标签 ${tid} 不存在（可能已关闭）`, '执行 `bx tab list`')
+  if (!t) throw new RsfError('NO_TAB', `标签 ${tid} 不存在（可能已关闭）`, '执行 `rsf tab list`')
   return { id: tid, ...t, driver: browsers.get(t.browser)! }
 }
 
@@ -225,14 +225,14 @@ async function withChanges<T>(s: TabSession, fn: () => Promise<T>, opts: { settl
 
 /** 准备接住下一个下载：CDP 模式用 Browser.setDownloadBehavior，插件模式用 chrome.downloads */
 async function expectDownload(d: Driver) {
-  if (d.kind === 'cdp') return (d as CdpDriver).expectDownload(path.join(BX_HOME, 'downloads', '.incoming'))
+  if (d.kind === 'cdp') return (d as CdpDriver).expectDownload(path.join(RSF_HOME, 'downloads', '.incoming'))
   return (d as ExtensionDriver).expectDownload()
 }
 
 /** 下载完的文件搬到目标目录（重名就加序号） */
 function placeDownload(r: { file: string; url: string; name: string }, dir: string | undefined, kind: string) {
   if (!dir && kind !== 'cdp') return { file: r.file, url: r.url, size: fs.statSync(r.file).size }
-  const target = ensureDir(dir || path.join(BX_HOME, 'downloads'))
+  const target = ensureDir(dir || path.join(RSF_HOME, 'downloads'))
   const safe = r.name.replace(/[\\/:*?"<>|]/g, '_') || 'download'
   const ext = path.extname(safe)
   let dest = path.join(target, safe)
@@ -297,8 +297,8 @@ const methods: Record<string, Handler> = {
         ...(b.info.launched ? { profile: b.info.launched.profile, headless: b.info.launched.headless } : {}),
       })),
     ),
-  'browser.launch': async ({ name = 'bx', headless, executable, port }) => {
-    if (browsers.has(name)) throw new BxError('EXISTS', `已经有叫 ${name} 的浏览器了`)
+  'browser.launch': async ({ name = 'rsf', headless, executable, port }) => {
+    if (browsers.has(name)) throw new RsfError('EXISTS', `已经有叫 ${name} 的浏览器了`)
     const d = await launchBrowser(name, { headless, executable, port })
     registerBrowser(d)
     return { name: d.name, endpoint: d.endpoint, ...d.info.launched }
@@ -319,7 +319,7 @@ const methods: Record<string, Handler> = {
   // ---------- 标签 ----------
   'debug.ext': async ({ browser, method, params }) => {
     const d = getBrowser(browser)
-    if (d.kind !== 'extension') throw new BxError('BAD_ARG', `${d.name} 不是插件模式`)
+    if (d.kind !== 'extension') throw new RsfError('BAD_ARG', `${d.name} 不是插件模式`)
     return (d as ExtensionDriver).ext(method, params || {})
   },
   'tab.list': async ({ browser, filter }) => {
@@ -350,7 +350,7 @@ const methods: Record<string, Handler> = {
     if (!keep) currentTab = id
     const s = session(id)
     // 后台标签会被浏览器降速（定时器变慢、没有焦点），懒加载可能不动：让页面以为自己有焦点
-    if (background && !process.env.BX_NO_FOCUS_EMULATION) await s.send('Emulation.setFocusEmulationEnabled', { enabled: true }).catch(() => {})
+    if (background && !process.env.RSF_NO_FOCUS_EMULATION) await s.send('Emulation.setFocusEmulationEnabled', { enabled: true }).catch(() => {})
     if (trace) await trace.addTab(s, 'newtab')
     if (url && url !== 'about:blank') await act.goto(s, url).catch(e => log('open', e.message))
     const finalUrl = await s.evaluate('location.href').catch(() => url)
@@ -412,19 +412,19 @@ const methods: Record<string, Handler> = {
   'group.create': async ({ tabs, title, color }) => {
     const refs = (tabs?.length ? tabs : [tabRef().id]).map((x: string) => tabRef(x))
     const d = refs[0].driver
-    if (!d.groups) throw new BxError('UNSUPPORTED', '标签组只有插件模式支持（CDP 没有标签组接口）')
-    if (refs.some((r: any) => r.driver !== d)) throw new BxError('BAD_ARGS', '一个标签组里的标签必须在同一个浏览器')
+    if (!d.groups) throw new RsfError('UNSUPPORTED', '标签组只有插件模式支持（CDP 没有标签组接口）')
+    if (refs.some((r: any) => r.driver !== d)) throw new RsfError('BAD_ARGS', '一个标签组里的标签必须在同一个浏览器')
     return d.groups.create(refs.map((r: any) => r.nativeId), { title, color })
   },
   'group.update': async ({ id, browser, title, color, collapsed }) => {
     const d = getBrowser(browser)
-    if (!d.groups) throw new BxError('UNSUPPORTED', '标签组只有插件模式支持')
+    if (!d.groups) throw new RsfError('UNSUPPORTED', '标签组只有插件模式支持')
     return d.groups.update(Number(id), { title, color, collapsed })
   },
   'group.ungroup': async ({ tabs }) => {
     const refs = (tabs?.length ? tabs : [tabRef().id]).map((x: string) => tabRef(x))
     const d = refs[0].driver
-    if (!d.groups) throw new BxError('UNSUPPORTED', '标签组只有插件模式支持')
+    if (!d.groups) throw new RsfError('UNSUPPORTED', '标签组只有插件模式支持')
     await d.groups.ungroup(refs.map((r: any) => r.nativeId))
     return { ok: true }
   },
@@ -456,9 +456,9 @@ const methods: Record<string, Handler> = {
     if (world === 'isolated') {
       // 隔离环境：和页面共享 DOM，但看不到页面的 JS 变量，页面也看不到我们
       const { frameTree } = await s.send('Page.getFrameTree')
-      const { executionContextId } = await s.send('Page.createIsolatedWorld', { frameId: frameTree.frame.id, worldName: 'bx' })
+      const { executionContextId } = await s.send('Page.createIsolatedWorld', { frameId: frameTree.frame.id, worldName: 'rsf' })
       const r = await s.send('Runtime.evaluate', { expression: code, contextId: executionContextId, returnByValue: true, awaitPromise: true, replMode: true })
-      if (r.exceptionDetails) throw new BxError('JS_ERROR', `JS 报错：${r.exceptionDetails.exception?.description || r.exceptionDetails.text}`)
+      if (r.exceptionDetails) throw new RsfError('JS_ERROR', `JS 报错：${r.exceptionDetails.exception?.description || r.exceptionDetails.text}`)
       return { value: r.result.value }
     }
     return { value: await s.evaluate(code, { replMode: true }) }
@@ -485,7 +485,7 @@ const methods: Record<string, Handler> = {
     if (level) list = list.filter(x => x.level === level || (level === 'error' && x.level === 'exception'))
     const out = list.slice(-limit).map(x => ({ level: x.level, text: x.text }))
     if (clear) s.console = []
-    return first ? { note: '控制台记录刚开启，之前的日志没有；需要的话 bx reload 后再看', logs: out } : out
+    return first ? { note: '控制台记录刚开启，之前的日志没有；需要的话 rsf reload 后再看', logs: out } : out
   },
   'page.dialogs': async ({ tab, policy }) => {
     const s = session(tab)
@@ -503,7 +503,7 @@ const methods: Record<string, Handler> = {
       s,
       async () => {
         await act.click(s, ref, o)
-        const r = await (timeout ? Promise.race([exp.done, sleep(timeout).then(() => Promise.reject(new BxError('TIMEOUT', `等下载超时 (${timeout}ms)`)))]) : exp.done)
+        const r = await (timeout ? Promise.race([exp.done, sleep(timeout).then(() => Promise.reject(new RsfError('TIMEOUT', `等下载超时 (${timeout}ms)`)))]) : exp.done)
         return { download: placeDownload(r, save, s.driver.kind) }
       },
       { snap },
@@ -628,13 +628,13 @@ const methods: Record<string, Handler> = {
       ms: e.duration,
       url: e.url.length > 200 ? e.url.slice(0, 200) + '…' : e.url,
     }))
-    if (first) return { note: '网络记录刚开启，之前的请求没有记录；需要的话先 bx reload', requests: rows }
+    if (first) return { note: '网络记录刚开启，之前的请求没有记录；需要的话先 rsf reload', requests: rows }
     return rows
   },
   'net.show': async ({ tab, id, body = true, headers, max = 20000 }) => {
     const s = session(tab)
     const e = s.netOrder.find(x => x.id === Number(id))
-    if (!e) throw new BxError('NO_REQUEST', `没有请求 #${id}`, '`bx net log` 查看请求列表')
+    if (!e) throw new RsfError('NO_REQUEST', `没有请求 #${id}`, '`rsf net log` 查看请求列表')
     const out: any = { ...e, requestId: undefined, done: undefined, start: undefined }
     if (!headers) {
       out.requestHeaders = undefined
@@ -722,7 +722,7 @@ const methods: Record<string, Handler> = {
 
   // ---------- trace 录制 ----------
   'trace.start': async ({ name, goal, tab, noTab }) => {
-    if (trace) throw new BxError('TRACING', `正在录制 ${trace.name}`, '先 `bx trace stop`')
+    if (trace) throw new RsfError('TRACING', `正在录制 ${trace.name}`, '先 `rsf trace stop`')
     const n = name || 'trace-' + new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14)
     const t = new Trace(n, goal)
     trace = t
@@ -733,27 +733,27 @@ const methods: Record<string, Handler> = {
     }
     return {
       ...t.status(),
-      note: '开始录制。之后用 bx 操作的标签会自动加入；用户在这些标签里手动点击/输入也会记下。关键步骤可以 bx trace mark "说明"，结束用 bx trace stop',
+      note: '开始录制。之后用 rsf 操作的标签会自动加入；用户在这些标签里手动点击/输入也会记下。关键步骤可以 rsf trace mark "说明"，结束用 rsf trace stop',
     }
   },
   'trace.status': async () => (trace ? trace.status() : { recording: false }),
   'trace.mark': async ({ note, tab }) => {
-    if (!trace) throw new BxError('NOT_TRACING', '没有在录制', '`bx trace start --goal "要做什么"`')
+    if (!trace) throw new RsfError('NOT_TRACING', '没有在录制', '`rsf trace start --goal "要做什么"`')
     trace.add({ tab: tab || currentTab || '', type: 'mark', note })
     return { ok: true, t: trace.rel() }
   },
   'trace.add': async ({ tab }) => {
-    if (!trace) throw new BxError('NOT_TRACING', '没有在录制')
+    if (!trace) throw new RsfError('NOT_TRACING', '没有在录制')
     await trace.addTab(session(tab), 'newtab')
     return trace.status()
   },
   'trace.stop': async () => {
-    if (!trace) throw new BxError('NOT_TRACING', '没有在录制')
+    if (!trace) throw new RsfError('NOT_TRACING', '没有在录制')
     const t = trace
     trace = null
     const r = await t.stop()
     const report = digestTrace(r.dir)
-    return { ...r, report: report.file, next: `bx trace digest ${r.name}   # 查看调查报告；摸清楚以后把取数据的代码写成 ~/.bx/lib/<域名>.js 里的函数` }
+    return { ...r, report: report.file, next: `rsf trace digest ${r.name}   # 查看调查报告；摸清楚以后把取数据的代码写成 ~/.rsf/lib/<域名>.js 里的函数` }
   },
   'trace.list': async () => listTraces(),
   'trace.rm': async ({ name }) => {
@@ -828,7 +828,7 @@ const BOOT = Date.now()
 
 const server = http.createServer((req, res) => {
   res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8' })
-  res.end('bx daemon\n')
+  res.end('rsf daemon\n')
 })
 const wss = new WebSocketServer({ noServer: true, maxPayload: 256 * 1024 * 1024 })
 
@@ -884,12 +884,12 @@ function onClient(ws: WebSocket) {
     }
     const h = methods[msg.method]
     try {
-      if (!h) throw new BxError('NO_METHOD', `未知方法 ${msg.method}`)
+      if (!h) throw new RsfError('NO_METHOD', `未知方法 ${msg.method}`)
       const params = msg.params || {}
       const result = trace && (TRACED_ACTIONS.has(msg.method) || TRACED_OBS.has(msg.method)) ? await traced(msg.method, params, h) : await h(params)
       ws.send(JSON.stringify({ id: msg.id, result: result ?? null }))
     } catch (e: any) {
-      const err = e instanceof BxError ? e.toJSON() : { code: 'ERROR', message: String(e?.message || e) }
+      const err = e instanceof RsfError ? e.toJSON() : { code: 'ERROR', message: String(e?.message || e) }
       ws.send(JSON.stringify({ id: msg.id, error: err }))
     }
   })
@@ -913,9 +913,9 @@ server.on('error', (e: any) => {
   process.exit(1)
 })
 server.listen(PORT, '127.0.0.1', async () => {
-  ensureDir(BX_HOME)
+  ensureDir(RSF_HOME)
   fs.writeFileSync(DAEMON_FILE, JSON.stringify({ port: PORT, token: TOKEN, pid: process.pid }))
-  log(`bx daemon listening on 127.0.0.1:${PORT} pid=${process.pid}`)
+  log(`rsf daemon listening on 127.0.0.1:${PORT} pid=${process.pid}`)
   // 配置文件里的浏览器自动连上
   for (const b of config.browsers || []) {
     try {

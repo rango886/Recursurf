@@ -1,7 +1,7 @@
 {
-  "name": "browserx",
+  "name": "recursurf",
   "version": "2.0.0",
-  "description": "AI-friendly browser control: multi-browser CLI, bx run (JS with a global bx), per-domain function libraries",
+  "description": "AI-friendly browser control: multi-browser CLI, rsf run (JS with a global rsf), per-domain function libraries",
   "main": "src/sdk/index.ts",
   "scripts": {
     "test": "node test/e2e.ts"
@@ -22,6 +22,7 @@
     "typescript": "^7.0.2"
   },
   "bin": {
-    "bx": "bin/bx.js"
+    "recursurf": "bin/recursurf.js",
+    "rsf": "bin/recursurf.js"
   }
 }

@@ -3,8 +3,8 @@ import path from 'node:path'
 import type { TabSession } from './session.ts'
 import { parseCombo } from './keys.ts'
 import { resolveTarget } from './locate.ts'
-import { BxError, sleep, urlPattern, withTimeout } from '../common/util.ts'
-import { BX_HOME, ensureDir } from '../common/paths.ts'
+import { RsfError, sleep, urlPattern, withTimeout } from '../common/util.ts'
+import { RSF_HOME, ensureDir } from '../common/paths.ts'
 
 // ---------------- 定位 ----------------
 
@@ -14,10 +14,10 @@ async function center(s: TabSession, bid: number) {
   try {
     quads = (await s.send('DOM.getContentQuads', { backendNodeId: bid })).quads
   } catch {
-    throw new BxError('STALE_REF', '元素已经不在页面上了', '重新执行 `bx snapshot`')
+    throw new RsfError('STALE_REF', '元素已经不在页面上了', '重新执行 `rsf snapshot`')
   }
   const q = quads.find(q => area(q) > 1)
-  if (!q) throw new BxError('NOT_VISIBLE', '元素不可见（被隐藏或尺寸为 0）', '可能需要先展开菜单 / 滚动 / 关闭弹层，再 snapshot')
+  if (!q) throw new RsfError('NOT_VISIBLE', '元素不可见（被隐藏或尺寸为 0）', '可能需要先展开菜单 / 滚动 / 关闭弹层，再 snapshot')
   return { x: (q[0] + q[2] + q[4] + q[6]) / 4, y: (q[1] + q[3] + q[5] + q[7]) / 4 }
 }
 
@@ -60,7 +60,7 @@ export function modBits(mods?: string | string[]) {
   let b = 0
   for (const m of ([] as string[]).concat(mods || []).flatMap(x => x.split(/[,+\s]+/)).filter(Boolean)) {
     const v = MOD_BITS[m.toLowerCase()]
-    if (v === undefined) throw new BxError('BAD_ARGS', `未知修饰键 ${m}`, '可用：Shift Control Alt Meta')
+    if (v === undefined) throw new RsfError('BAD_ARGS', `未知修饰键 ${m}`, '可用：Shift Control Alt Meta')
     b |= v
   }
   return b
@@ -92,7 +92,7 @@ export async function click(s: TabSession, target: string, opts: ClickOpts = {})
 }
 
 async function clickNode(s: TabSession, bid: number, label: string, opts: ClickOpts = {}) {
-  const dbg = process.env.BX_DEBUG ? (m: string) => console.log(new Date().toISOString(), 'click', label, m) : () => {}
+  const dbg = process.env.RSF_DEBUG ? (m: string) => console.log(new Date().toISOString(), 'click', label, m) : () => {}
   let pt = await center(s, bid)
   dbg(`center ${pt.x},${pt.y}`)
   if (!opts.force) {
@@ -104,7 +104,7 @@ async function clickNode(s: TabSession, bid: number, label: string, opts: ClickO
       await sleep(200)
       pt = await center(s, bid)
     }
-    if (cover) throw new BxError('COVERED', `${label} 被别的元素挡住了：${cover}`, '先关掉弹层/遮罩（或 snapshot 看看是什么），确实要点就加 --force')
+    if (cover) throw new RsfError('COVERED', `${label} 被别的元素挡住了：${cover}`, '先关掉弹层/遮罩（或 snapshot 看看是什么），确实要点就加 --force')
   }
   await clickAt(s, pt.x, pt.y, opts)
 }
@@ -147,7 +147,7 @@ export async function mouseAction(
 ) {
   const num = (v: any, name: string) => {
     const n = Number(v)
-    if (v === undefined || Number.isNaN(n)) throw new BxError('BAD_ARGS', `需要数字 ${name}`)
+    if (v === undefined || Number.isNaN(n)) throw new RsfError('BAD_ARGS', `需要数字 ${name}`)
     return n
   }
   const button = o.right ? 'right' : o.middle ? 'middle' : 'left'
@@ -181,7 +181,7 @@ export async function mouseAction(
       await dragPoints(s, { x: num(o.x, 'x1'), y: num(o.y, 'y1') }, { x: num(o.x2, 'x2'), y: num(o.y2, 'y2') }, Math.max(1, o.steps ?? 15))
       break
     default:
-      throw new BxError('BAD_ARGS', `未知鼠标动作 ${o.action}`, '可用：click move down up wheel drag')
+      throw new RsfError('BAD_ARGS', `未知鼠标动作 ${o.action}`, '可用：click move down up wheel drag')
   }
   return { x: s.mouse.x, y: s.mouse.y }
 }
@@ -268,7 +268,7 @@ export async function press(s: TabSession, combo: string) {
 /** 按住 / 松开一个键（按住 Shift 再点几下 = 多选）。按住的修饰键会带到之后的点击和按键里 */
 export async function keyAction(s: TabSession, action: 'down' | 'up', combo: string) {
   const k = parseCombo(combo)
-  if (k.modifierKeys.length) throw new BxError('BAD_ARGS', 'key down / up 一次只按一个键', '例：bx key down Shift')
+  if (k.modifierKeys.length) throw new RsfError('BAD_ARGS', 'key down / up 一次只按一个键', '例：rsf key down Shift')
   const bit = ({ Alt: 1, Control: 2, Meta: 4, Shift: 8 } as Record<string, number>)[k.key] || 0
   if (action === 'down') s.mods |= bit
   const base = { key: k.key, code: k.code, windowsVirtualKeyCode: k.keyCode, modifiers: s.mods }
@@ -314,7 +314,7 @@ export async function fill(s: TabSession, target: string, text: string, opts: { 
   const bid = await resolveTarget(s, target)
   const info = await s.callOn(bid, FOCUS_FN, [!opts.append])
   if (info.tag === 'SELECT') return selectNode(s, bid, target, [text])
-  if (!info.editable) throw new BxError('NOT_EDITABLE', `${target} 不是输入框（是 <${info.tag.toLowerCase()}>）`, '用 snapshot 找 textbox / searchbox / combobox')
+  if (!info.editable) throw new RsfError('NOT_EDITABLE', `${target} 不是输入框（是 <${info.tag.toLowerCase()}>）`, '用 snapshot 找 textbox / searchbox / combobox')
   const before = opts.append ? await s.callOn(bid, VALUE_FN) : ''
   const input = async () => {
     if (text === '') await press(s, 'Delete')
@@ -376,8 +376,8 @@ async function selectNode(s: TabSession, bid: number, ref: string, values: strin
     }`,
     [values],
   )
-  if (r.error === 'not-select') throw new BxError('NOT_SELECT', `${ref} 不是 <select>（是 <${r.tag.toLowerCase()}>）`, '自定义下拉框：先 click 打开，再 snapshot 找选项 click')
-  if (r.error === 'no-option') throw new BxError('NO_OPTION', `没有选项 "${r.value}"`, `可选：${r.options.join(' | ')}`)
+  if (r.error === 'not-select') throw new RsfError('NOT_SELECT', `${ref} 不是 <select>（是 <${r.tag.toLowerCase()}>）`, '自定义下拉框：先 click 打开，再 snapshot 找选项 click')
+  if (r.error === 'no-option') throw new RsfError('NO_OPTION', `没有选项 "${r.value}"`, `可选：${r.options.join(' | ')}`)
   return r
 }
 
@@ -412,7 +412,7 @@ export async function fillMany(s: TabSession, fields: { target: string; value: a
 export async function upload(s: TabSession, target: string, files: string[]) {
   await s.ensure('DOM')
   const abs = files.map(f => path.resolve(f))
-  for (const f of abs) if (!fs.existsSync(f)) throw new BxError('NO_FILE', `文件不存在：${f}`)
+  for (const f of abs) if (!fs.existsSync(f)) throw new RsfError('NO_FILE', `文件不存在：${f}`)
   const bid = await resolveTarget(s, target)
   const isInput = await s.callOn(bid, `function(){ return this.tagName === 'INPUT' && this.type === 'file' }`)
   if (isInput) {
@@ -427,10 +427,10 @@ export async function upload(s: TabSession, target: string, files: string[]) {
     opened.catch(() => {})
     await clickNode(s, bid, target)
     const ev = await opened.catch(() => {
-      throw new BxError('NO_FILE_CHOOSER', `点了 ${target} 没有弹出选文件窗口`, '找页面上的 <input type=file>（可能是隐藏的）：bx upload "input[type=file]" 文件')
+      throw new RsfError('NO_FILE_CHOOSER', `点了 ${target} 没有弹出选文件窗口`, '找页面上的 <input type=file>（可能是隐藏的）：rsf upload "input[type=file]" 文件')
     })
-    if (!ev.backendNodeId) throw new BxError('UNSUPPORTED', '这个选文件窗口不是 <input type=file> 弹出来的（File System Access API），没法代选文件')
-    if (ev.mode === 'selectSingle' && abs.length > 1) throw new BxError('BAD_ARGS', '这个文件框只能选一个文件')
+    if (!ev.backendNodeId) throw new RsfError('UNSUPPORTED', '这个选文件窗口不是 <input type=file> 弹出来的（File System Access API），没法代选文件')
+    if (ev.mode === 'selectSingle' && abs.length > 1) throw new RsfError('BAD_ARGS', '这个文件框只能选一个文件')
     await s.send('DOM.setFileInputFiles', { files: abs, backendNodeId: ev.backendNodeId })
     return { files: abs, via: 'file-chooser' }
   } finally {
@@ -444,7 +444,7 @@ export async function goto(s: TabSession, url: string) {
   await s.ensure('Page')
   if (!/^[a-z][a-z0-9+.-]*:/i.test(url)) url = 'https://' + url
   const r = await s.send('Page.navigate', { url })
-  if (r.errorText) throw new BxError('NAV_FAILED', `打开 ${url} 失败：${r.errorText}`)
+  if (r.errorText) throw new RsfError('NAV_FAILED', `打开 ${url} 失败：${r.errorText}`)
   await s.settle(15000)
 }
 
@@ -452,7 +452,7 @@ export async function history(s: TabSession, delta: number) {
   await s.ensure('Page')
   const h = await s.send('Page.getNavigationHistory')
   const e = h.entries[h.currentIndex + delta]
-  if (!e) throw new BxError('NO_HISTORY', delta < 0 ? '已经是第一页，没法后退' : '没有可以前进的页面')
+  if (!e) throw new RsfError('NO_HISTORY', delta < 0 ? '已经是第一页，没法后退' : '没有可以前进的页面')
   await s.send('Page.navigateToHistoryEntry', { entryId: e.id })
   await s.settle()
 }
@@ -490,7 +490,7 @@ export async function waitFor(
     if (await s.evaluate(expr).catch(() => false)) return { ok: true, waited: timeout - (end - Date.now()) }
     await sleep(200)
   }
-  throw new BxError('TIMEOUT', `等待条件超时 (${timeout}ms)：${JSON.stringify(o)}`, '用 `bx read` 或 `bx shot` 看看页面现在是什么样')
+  throw new RsfError('TIMEOUT', `等待条件超时 (${timeout}ms)：${JSON.stringify(o)}`, '用 `rsf read` 或 `rsf shot` 看看页面现在是什么样')
 }
 
 // ---------------- 截图 ----------------
@@ -532,7 +532,7 @@ export async function screenshot(
   } finally {
     await removeMarks()
   }
-  const file = o.out ? path.resolve(o.out) : path.join(ensureDir(path.join(BX_HOME, 'shots')), `${s.shortId}-${Date.now()}.${format === 'jpeg' ? 'jpg' : 'png'}`)
+  const file = o.out ? path.resolve(o.out) : path.join(ensureDir(path.join(RSF_HOME, 'shots')), `${s.shortId}-${Date.now()}.${format === 'jpeg' ? 'jpg' : 'png'}`)
   ensureDir(path.dirname(file))
   fs.writeFileSync(file, Buffer.from(data, 'base64'))
   return { file, bytes: Math.round((data.length * 3) / 4) }
@@ -556,7 +556,7 @@ async function drawMarks(s: TabSession) {
   )
   await s.evaluate(`(() => {
     const boxes = ${JSON.stringify(boxes)};
-    const root = document.createElement('div'); root.id = '__bx_marks__';
+    const root = document.createElement('div'); root.id = '__rsf_marks__';
     root.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:2147483647';
     for (const b of boxes) {
       if (b.y > innerHeight || b.y + b.h < 0 || b.w < 2) continue;
@@ -569,6 +569,6 @@ async function drawMarks(s: TabSession) {
     document.documentElement.appendChild(root);
   })()`)
   return async () => {
-    await s.evaluate(`document.getElementById('__bx_marks__')?.remove()`).catch(() => {})
+    await s.evaluate(`document.getElementById('__rsf_marks__')?.remove()`).catch(() => {})
   }
 }

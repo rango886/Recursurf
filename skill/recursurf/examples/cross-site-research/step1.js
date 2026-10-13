@@ -1,27 +1,27 @@
 // 第 1 步：几个站并行搜，规整成同一种结构，写文件；只把摘要返回给自己看
-// 用法：bx run -f step1.js            （在一个工作目录里跑，结果写到 ./research/）
+// 用法：rsf run -f step1.js            （在一个工作目录里跑，结果写到 ./research/）
 import fs from 'node:fs'
 
 // ← 每次只改这里：问题拆成几组关键词（英文站用英文，中文站用中文）
 const Q = { en: 'sqlite production', zh: 'SQLite 生产环境' }
 
 // 每个来源：怎么搜 + 怎么规整成 { title, url, heat, time, snippet }
-// 先 `bx lib list` 看有哪些现成函数；没有函数库的网站，用 google 的 site: 搜索兜底
+// 先 `rsf lib list` 看有哪些现成函数；没有函数库的网站，用 google 的 site: 搜索兜底
 const sources = {
   hn: {
-    search: () => bx.lib('news.ycombinator.com').search(Q.en, { days: 365, limit: 30 }),
+    search: () => rsf.lib('news.ycombinator.com').search(Q.en, { days: 365, limit: 30 }),
     norm: p => ({ title: p.title, url: p.url, heat: `${p.points ?? 0}分 ${p.comments ?? 0}评`, time: p.time }),
   },
   reddit: {
-    search: () => bx.lib('reddit.com').search(Q.en, { time: 'year', limit: 30 }),
+    search: () => rsf.lib('reddit.com').search(Q.en, { time: 'year', limit: 30 }),
     norm: p => ({ title: p.title, url: p.url, heat: `${p.score ?? 0}赞 ${p.comments ?? 0}评`, time: p.time, snippet: `r/${p.sub}` }),
   },
   bili: {
-    search: () => bx.lib('bilibili.com').search(Q.zh, { limit: 20 }),
+    search: () => rsf.lib('bilibili.com').search(Q.zh, { limit: 20 }),
     norm: p => ({ title: p.title, url: p.url, heat: `${p.play ?? 0}播放`, time: p.pubdate, snippet: p.author }),
   },
   google: {
-    search: () => bx.lib('google.com').search(Q.zh, { limit: 20, time: 'year' }),
+    search: () => rsf.lib('google.com').search(Q.zh, { limit: 20, time: 'year' }),
     norm: p => ({ title: p.title, url: p.url, snippet: p.snippet }),
   },
 }
@@ -37,7 +37,7 @@ settled.forEach((r, i) => {
   status[site] = `${r.value.length} 条`
   for (const p of r.value) posts.push({ site, ...sources[site].norm(p) })
 })
-await bx.cleanup() // 关掉这次自己开的标签（用户原来的标签不动）
+await rsf.cleanup() // 关掉这次自己开的标签（用户原来的标签不动）
 
 // 去重；保留各站自己的相关度顺序（按评论数排会把跑题的热帖排到前面）
 const seen = new Set()

@@ -1,6 +1,6 @@
 import type { TabSession } from './session.ts'
 import { axIndex, axKey, INTERACTIVE, type AXNode } from './snapshot.ts'
-import { BxError, sleep } from '../common/util.ts'
+import { RsfError, sleep } from '../common/util.ts'
 
 /**
  * 元素定位：所有操作命令的"目标"都走这里，支持四种写法
@@ -21,7 +21,7 @@ export const isRef = (t: string) => /^@?e\d+$/.test(t.trim())
 
 export function parseTarget(target: string): Locator {
   const t = String(target ?? '').trim()
-  if (!t) throw new BxError('BAD_ARGS', '缺少目标元素', '写 snapshot 编号（e12）、CSS 选择器，或 getByRole / getByLabel / getByText')
+  if (!t) throw new RsfError('BAD_ARGS', '缺少目标元素', '写 snapshot 编号（e12）、CSS 选择器，或 getByRole / getByLabel / getByText')
   if (isRef(t)) return { kind: 'ref', ref: t.replace(/^@/, '') }
   const m = t.match(/^(?:page\.)?getBy(Role|Label|Text|Placeholder)\s*\(([\s\S]*)\)$/)
   if (!m) return { kind: 'css', selector: t }
@@ -29,7 +29,7 @@ export function parseTarget(target: string): Locator {
   try {
     args = parseLiterals(m[2])
   } catch (e: any) {
-    throw new BxError('BAD_ARGS', `看不懂 ${t}：${e.message}`, "例：getByRole('button', { name: '提交' })、getByText('下一步', { exact: true })")
+    throw new RsfError('BAD_ARGS', `看不懂 ${t}：${e.message}`, "例：getByRole('button', { name: '提交' })、getByText('下一步', { exact: true })")
   }
   const kind = m[1].toLowerCase() as 'role' | 'label' | 'text' | 'placeholder'
   if (kind === 'role') {
@@ -170,7 +170,7 @@ async function byDOM(s: TabSession, expression: string): Promise<Found> {
   const r = await s.send('Runtime.evaluate', { expression, returnByValue: false, awaitPromise: true })
   if (r.exceptionDetails) {
     const msg = r.exceptionDetails.exception?.description || r.exceptionDetails.text
-    throw new BxError('BAD_SELECTOR', `选择器不对：${String(msg).split('\n')[0]}`, '检查 CSS 写法；按文字找用 getByText(...)，按角色找用 getByRole(...)')
+    throw new RsfError('BAD_SELECTOR', `选择器不对：${String(msg).split('\n')[0]}`, '检查 CSS 写法；按文字找用 getByText(...)，按角色找用 getByRole(...)')
   }
   const objId = r.result?.objectId
   if (!objId) return { bids: [], descs: [] }
@@ -196,7 +196,7 @@ async function byDOM(s: TabSession, expression: string): Promise<Found> {
   }
 }
 
-const DEEP_QUERY = `function __bxDeep(root, sel) {
+const DEEP_QUERY = `function __rsfDeep(root, sel) {
   const out = [];
   const visit = r => { out.push(...r.querySelectorAll(sel)); for (const el of r.querySelectorAll('*')) if (el.shadowRoot) visit(el.shadowRoot) };
   visit(root); return [...new Set(out)];
@@ -283,23 +283,23 @@ export async function resolveTarget(s: TabSession, target: string, opts: { timeo
     if (await alive(s, bid)) return bid
     const again = await relocate(s, l.ref)
     if (again !== null) return again
-    throw new BxError('STALE_REF', `${l.ref} 对应的元素已经不在页面上了，也没能重新找到`, '重新执行 `bx snapshot`，或者改用 getByRole(...) / CSS 选择器定位')
+    throw new RsfError('STALE_REF', `${l.ref} 对应的元素已经不在页面上了，也没能重新找到`, '重新执行 `rsf snapshot`，或者改用 getByRole(...) / CSS 选择器定位')
   }
   const end = Date.now() + (opts.timeout ?? 3000)
   while (true) {
     const f = await find(s, l)
     if (f.bids.length === 1) return f.bids[0]
     if (f.bids.length > 1) {
-      throw new BxError(
+      throw new RsfError(
         'AMBIGUOUS',
         `${describeLocator(l)} 匹配到 ${f.bids.length >= 20 ? '20 个以上' : f.bids.length + ' 个'}元素`,
-        `候选：${f.descs.slice(0, 8).map((d, i) => `\n    ${i + 1}. ${d}`).join('')}\n  写得更具体一些（加 { exact: true }、换更精确的 CSS），或者 bx snapshot / bx find 拿编号`,
+        `候选：${f.descs.slice(0, 8).map((d, i) => `\n    ${i + 1}. ${d}`).join('')}\n  写得更具体一些（加 { exact: true }、换更精确的 CSS），或者 rsf snapshot / rsf find 拿编号`,
       )
     }
     if (Date.now() >= end) break
     await sleep(250)
   }
-  throw new BxError('NO_ELEMENT', `页面上没有找到 ${describeLocator(l)}`, '`bx find <文字>` 或 `bx snapshot -i` 看看页面上有什么')
+  throw new RsfError('NO_ELEMENT', `页面上没有找到 ${describeLocator(l)}`, '`rsf find <文字>` 或 `rsf snapshot -i` 看看页面上有什么')
 }
 
 export { INTERACTIVE }

@@ -6,7 +6,7 @@
 
 ## 整体思路
 
-一次检索分成几步，**每一步是一次 `bx run`**：
+一次检索分成几步，**每一步是一次 `rsf run`**：
 
 | 步骤 | 做什么 | 写进文件 | 返回给 AI 看的 |
 |---|---|---|---|
@@ -14,12 +14,12 @@
 | 2. 挑着深挖 | AI 按标题挑几条，拉评论 / 正文（文章拆成段落，可按 `KEY` 只留相关段落） | `research/threads.json` | 每条的前几段（或命中的段落） |
 | 3. 一手资料 | 项目活跃度（公开接口）+ 官方文档 | `research/sources.json` | 数字和文档开头 |
 | 4. 写结论 | AI 汇总，每个说法带来源链接 | — | — |
-| 5. 存下来 | 现场写的、以后还会用的代码改成函数 | `~/.bx/lib/<域名>.js` | — |
+| 5. 存下来 | 现场写的、以后还会用的代码改成函数 | `~/.rsf/lib/<域名>.js` | — |
 
 为什么这样拆：
 
 - **中间结果写文件，返回值只放摘要**。几百条评论如果直接打印出来会撑爆上下文；只看摘要，需要细节时再去读文件。
-- **每次 `bx run` 跑完就退出也不怕**。标签和登录状态在 daemon 里，下一步要用的数据在文件里。
+- **每次 `rsf run` 跑完就退出也不怕**。标签和登录状态在 daemon 里，下一步要用的数据在文件里。
 - **挑选这一步留给 AI**。各站的搜索结果都会混进跑题的帖子，程序判断不了，AI 看标题就能挑出来。
 
 ## 跑一遍
@@ -28,9 +28,9 @@
 mkdir -p ~/work/sqlite && cd ~/work/sqlite
 cp <skill 目录>/examples/cross-site-research/step*.js .
 
-bx run -f step1.js            # 看输出：哪些来源成功了，每条前面的数字是序号
-bx run -f step2.js 0,31,60,80 # 填上挑中的序号（PowerShell 里加引号："0,31,60,80"）
-bx run -f step3.js
+rsf run -f step1.js            # 看输出：哪些来源成功了，每条前面的数字是序号
+rsf run -f step2.js 0,31,60,80 # 填上挑中的序号（PowerShell 里加引号："0,31,60,80"）
+rsf run -f step3.js
 ```
 
 第 1 步的输出长这样：
@@ -54,7 +54,7 @@ bx run -f step3.js
 ```js
 const sources = {
   hn: {
-    search: () => bx.lib('news.ycombinator.com').search(Q.en, { days: 365, limit: 30 }),
+    search: () => rsf.lib('news.ycombinator.com').search(Q.en, { days: 365, limit: 30 }),
     norm: p => ({ title: p.title, url: p.url, heat: `${p.points}分 ${p.comments}评`, time: p.time }),
   },
   // reddit / bili / google 同理；没有函数库的网站，用 google 加 site:xxx.com 兜底
@@ -75,26 +75,26 @@ const sources = {
 
 同时最多 3 个。一下子开十几个标签会拖慢浏览器，也容易被网站限流。
 
-**5. 用完关标签：`await bx.cleanup()`**
+**5. 用完关标签：`await rsf.cleanup()`**
 
-它只关这次 `bx run` 自己开的标签（包括 `bx.tab('reddit.com')` 没找到、新开的那个），用户原来的标签不动。
+它只关这次 `rsf run` 自己开的标签（包括 `rsf.tab('reddit.com')` 没找到、新开的那个），用户原来的标签不动。
 
 **6. 用命令行参数传选择，不用改代码**
 
-`bx run -f step2.js 0,31,60`，脚本里用 `bx.args[0]` 读到这些序号。
+`rsf run -f step2.js 0,31,60`，脚本里用 `rsf.args[0]` 读到这些序号。
 
 **7. 文章按段落拆开，只看和问题相关的段落**（step2.js 顶部的 `KEY`）
 
 评论天然是一条一段，文章却是一整篇。如果把整篇当一段再截到 250 字，只能看到开头，正文里真正有用的信息全丢了。所以：
 
 - 没设 `KEY`：文章按空行拆成段落，和评论一样显示前 12 段。
-- 设了 `KEY`（正则，如 `'WAL|并发|concurren'`）：文章用 `bx.read(url, { grep: KEY })`，只取命中的段落（前后各带一段）；评论也按它过滤。输出里会写“共 N 段，命中 M 段”。
+- 设了 `KEY`（正则，如 `'WAL|并发|concurren'`）：文章用 `rsf.read(url, { grep: KEY })`，只取命中的段落（前后各带一段）；评论也按它过滤。输出里会写“共 N 段，命中 M 段”。
 
-想看某篇文章的完整上下文，用 `bx read <网址> --grep KEY` 看命中位置 `〔@数字〕`，再 `--offset 数字` 接着读。
+想看某篇文章的完整上下文，用 `rsf read <网址> --grep KEY` 看命中位置 `〔@数字〕`，再 `--offset 数字` 接着读。
 
 **8. 搜索引擎不用自己控制节奏**
 
-step1.js 里可以放好几路 Google 查询一起并行：`google.com.search` 会自动排队、被人机验证拦住时改用必应 / DuckDuckGo（结果里 `engine` 字段标明来源）。中文问题可以再加一路 `bx.lib('baidu.com').search(Q.zh)`。
+step1.js 里可以放好几路 Google 查询一起并行：`google.com.search` 会自动排队、被人机验证拦住时改用必应 / DuckDuckGo（结果里 `engine` 字段标明来源）。中文问题可以再加一路 `rsf.lib('baidu.com').search(Q.zh)`。
 
 **9. 公开接口直接用 Node 的 `fetch`**（step3.js 调 GitHub API）
 
@@ -111,10 +111,10 @@ step1.js 里可以放好几路 Google 查询一起并行：`google.com.search` �
 
 ## 第 5 步：把摸通的部分存下来
 
-这次现场写的代码，如果以后还会用，就改成函数存进函数库。比如在 `bx run` 里摸通了知乎搜索：
+这次现场写的代码，如果以后还会用，就改成函数存进函数库。比如在 `rsf run` 里摸通了知乎搜索：
 
 ```js
-// ~/.bx/lib/zhihu.com.js
+// ~/.rsf/lib/zhihu.com.js
 /* 站点笔记：搜索接口 /api/v4/search_v3，在已登录的知乎标签里 tab.fetch 就能用；
  * paging.next 有时是 api.zhihu.com 的地址，要换成 www.zhihu.com/api/v4 */
 
@@ -123,4 +123,4 @@ step1.js 里可以放好几路 Google 查询一起并行：`google.com.search` �
 export async function search(q, { limit = 20 } = {}) { /* 现场写的那段代码 */ }
 ```
 
-下次检索时，在 step1.js 的 `sources` 里加一行 `zhihu` 就行了。`bx read` 打开知乎的网址，输出末尾也会提示有这个函数。
+下次检索时，在 step1.js 的 `sources` 里加一行 `zhihu` 就行了。`rsf read` 打开知乎的网址，输出末尾也会提示有这个函数。

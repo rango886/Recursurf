@@ -1,13 +1,13 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { BX_HOME, ensureDir } from '../common/paths.ts'
-import { BxError, sleep } from '../common/util.ts'
-import { createBx } from '../sdk/index.ts'
+import { RSF_HOME, ensureDir } from '../common/paths.ts'
+import { RsfError, sleep } from '../common/util.ts'
+import { createRsf } from '../sdk/index.ts'
 import { findLib, fnLogin, importLib, libInfo, listLibs, type LibEntry, type LibFn, type LibInfo } from '../sdk/lib.ts'
 
 /**
- * bx lib test [域名] [函数...]：把函数库里的 @example 当测试跑。
- * - 每个域名在 ~/.bx/test/<时间>/<域名>/ 这个临时目录里跑（当前目录切过去），@test file 声明的文件先写进去，下载的东西也落在这里
+ * rsf lib test [域名] [函数...]：把函数库里的 @example 当测试跑。
+ * - 每个域名在 ~/.rsf/test/<时间>/<域名>/ 这个临时目录里跑（当前目录切过去），@test file 声明的文件先写进去，下载的东西也落在这里
  * - 同一个域名里按顺序跑，每条之间停一下（--delay），免得触发风控
  * - 按错误码分类：只有“真坏了”才算失败；要登录、被拦、例子过期单独列出来
  */
@@ -56,7 +56,7 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
     p.finally(() => clearTimeout(timer)),
     new Promise<T>((_, rej) => {
-      timer = setTimeout(() => rej(new BxError('TIMEOUT', `超过 ${ms / 1000} 秒还没跑完`, '用 --timeout 调大，或者给这个函数加 @test skip')), ms)
+      timer = setTimeout(() => rej(new RsfError('TIMEOUT', `超过 ${ms / 1000} 秒还没跑完`, '用 --timeout 调大，或者给这个函数加 @test skip')), ms)
     }),
   ])
 }
@@ -81,7 +81,7 @@ async function runExample(mod: Record<string, any>, example: string) {
   try {
     fn = new AsyncFunction(...names, `return (${example}\n)`)
   } catch (e: any) {
-    throw new BxError('BAD_EXAMPLE', `例子写得不对，解析不了：${e.message}`, '@example 要写成一个函数调用表达式，比如 search(\'x\', { limit: 5 })')
+    throw new RsfError('BAD_EXAMPLE', `例子写得不对，解析不了：${e.message}`, '@example 要写成一个函数调用表达式，比如 search(\'x\', { limit: 5 })')
   }
   const r = await fn(...names.map(n => mod[n]))
   // 生成器：最多取 50 条
@@ -107,9 +107,9 @@ export interface TestOptions {
 
 function pickDomains(domain: string | undefined, o: TestOptions): LibEntry[] {
   if (o.all) return listLibs()
-  if (!domain) throw new BxError('BAD_ARGS', '要测哪个网站的函数库？', '例：bx lib test bilibili.com；全部都测用 --all（很慢，而且容易触发风控）')
+  if (!domain) throw new RsfError('BAD_ARGS', '要测哪个网站的函数库？', '例：rsf lib test bilibili.com；全部都测用 --all（很慢，而且容易触发风控）')
   const e = findLib(domain)
-  if (!e) throw new BxError('NO_LIB', `没有 ${domain} 的函数库`, `已有：${listLibs().map(l => l.domain).join(', ') || '(无)'}`)
+  if (!e) throw new RsfError('NO_LIB', `没有 ${domain} 的函数库`, `已有：${listLibs().map(l => l.domain).join(', ') || '(无)'}`)
   return [e]
 }
 
@@ -119,14 +119,14 @@ export async function libTest(domain: string | undefined, fnNames: string[], o: 
   const entries = pickDomains(domain, o)
   const home = process.cwd()
   const stamp = new Date().toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 15)
-  const root = path.join(BX_HOME, 'test', stamp)
+  const root = path.join(RSF_HOME, 'test', stamp)
   const results: ExampleResult[] = []
   const noExample: string[] = []
 
-  // 函数库里的 bx.lib('别的域名') 还要按原来的目录找（项目级函数库）
-  const bx = createBx({ tab: o.tab || process.env.BX_TAB, browser: o.browser, cwd: home })
-  ;(globalThis as any).bx = bx
-  ;(globalThis as any).BxError = BxError
+  // 函数库里的 rsf.lib('别的域名') 还要按原来的目录找（项目级函数库）
+  const rsf = createRsf({ tab: o.tab || process.env.RSF_TAB, browser: o.browser, cwd: home })
+  ;(globalThis as any).rsf = rsf
+  ;(globalThis as any).RsfError = RsfError
 
   try {
     for (const entry of entries) {
@@ -134,7 +134,7 @@ export async function libTest(domain: string | undefined, fnNames: string[], o: 
       let fns = info.functions
       if (fnNames.length) {
         const miss = fnNames.filter(n => !fns.some(f => f.name === n))
-        if (miss.length) throw new BxError('NO_FUNCTION', `${info.domain} 的函数库里没有 ${miss.join(', ')}`, `有：${fns.map(f => f.name).join(', ')}`)
+        if (miss.length) throw new RsfError('NO_FUNCTION', `${info.domain} 的函数库里没有 ${miss.join(', ')}`, `有：${fns.map(f => f.name).join(', ')}`)
         fns = fns.filter(f => fnNames.includes(f.name))
       }
       for (const f of fns) if (!f.examples.length && f.name !== 'read') noExample.push(`${info.domain} ${f.name}`)
@@ -174,7 +174,7 @@ export async function libTest(domain: string | undefined, fnNames: string[], o: 
               r = { ...base, ...classify(e, info, f) }
             } finally {
               process.chdir(home)
-              await bx.cleanup().catch(() => {})
+              await rsf.cleanup().catch(() => {})
             }
             r.ms = Date.now() - t0
           }
@@ -185,7 +185,7 @@ export async function libTest(domain: string | undefined, fnNames: string[], o: 
       }
     }
   } finally {
-    bx.close()
+    rsf.close()
   }
 
   if (!o.dry && o.clean) fs.rmSync(root, { recursive: true, force: true })

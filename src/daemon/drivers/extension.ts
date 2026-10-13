@@ -1,9 +1,9 @@
 import type WebSocket from 'ws'
 import type { Driver, TabInfo, GroupInfo, CdpEventHandler } from '../types.ts'
-import { BxError, withTimeout } from '../../common/util.ts'
+import { RsfError, withTimeout } from '../../common/util.ts'
 
 /**
- * 插件模式：浏览器里的 bx 插件通过 ws 连到 daemon。
+ * 插件模式：浏览器里的 rsf 插件通过 ws 连到 daemon。
  * 插件把 chrome.tabs / chrome.tabGroups 暴露出来，并用 chrome.debugger 转发 CDP。
  */
 export class ExtensionDriver implements Driver {
@@ -24,7 +24,7 @@ export class ExtensionDriver implements Driver {
     this.info = info
     ws.on('message', d => this.onMessage(String(d)))
     ws.on('close', () => {
-      for (const p of this.pending.values()) p.reject(new BxError('BROWSER_GONE', `浏览器 ${name} 的插件断开了`))
+      for (const p of this.pending.values()) p.reject(new RsfError('BROWSER_GONE', `浏览器 ${name} 的插件断开了`))
       this.closeHandlers.forEach(h => h())
     })
   }
@@ -43,7 +43,7 @@ export class ExtensionDriver implements Driver {
       const p = this.pending.get(msg.id)
       if (!p) return
       this.pending.delete(msg.id)
-      if (msg.error) p.reject(new BxError(msg.error.code || 'EXT_ERROR', `${p.method}: ${msg.error.message}`, msg.error.hint))
+      if (msg.error) p.reject(new RsfError(msg.error.code || 'EXT_ERROR', `${p.method}: ${msg.error.message}`, msg.error.hint))
       else p.resolve(msg.result)
     }
   }
@@ -102,7 +102,7 @@ export class ExtensionDriver implements Driver {
   async expectDownload(timeout = 120_000): Promise<{ done: Promise<{ file: string; url: string; name: string }> }> {
     // 先确认插件有 downloads 权限，再开始等
     await this.call('downloads.ready', {}, 5000).catch(() => {
-      throw new BxError('EXT_OUTDATED', '插件版本太旧，不支持下载', '在 chrome://extensions 里重新加载 BrowserX 插件（需要 downloads 权限）')
+      throw new RsfError('EXT_OUTDATED', '插件版本太旧，不支持下载', '在 chrome://extensions 里重新加载 Recursurf 插件（需要 downloads 权限）')
     })
     const done = this.call('downloads.wait', { timeout }, timeout + 5000)
     done.catch(() => {})

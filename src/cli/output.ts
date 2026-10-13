@@ -72,7 +72,7 @@ export function renderRead(r: any): string {
     if (r.grep) out.push(`grep: ${r.grep.pattern} · 命中 ${r.grep.hits} 处${r.grep.blocks !== undefined ? `，${r.grep.blocks} 块` : ''} · 共 ${r.grep.of}${r.grep.truncated ? ' · ⚠ ' + r.grep.truncated : ''}`)
     out.push('')
     out.push(r.content || '(空)')
-    if (r.more !== undefined) out.push('', `…(第 ${r.range[0]}-${r.range[1]} 字，共 ${r.total}；继续：bx read --section ${r.section} --offset ${r.more})`)
+    if (r.more !== undefined) out.push('', `…(第 ${r.range[0]}-${r.range[1]} 字，共 ${r.total}；继续：rsf read --section ${r.section} --offset ${r.more})`)
     return out.join('\n')
   }
   out.push(`# ${r.title || '(无标题)'}`)
@@ -109,13 +109,13 @@ export function renderRead(r: any): string {
       if (url) out.push(`   ${url}`)
     })
   }
-  if (r.more) out.push('', `…(还有更多，共 ${r.more.total}；继续：bx read --offset ${r.more.next})`)
+  if (r.more) out.push('', `…(还有更多，共 ${r.more.total}；继续：rsf read --offset ${r.more.next})`)
   if (r.sections?.length) {
-    out.push('', '分段（bx read --section <id>）：')
+    out.push('', '分段（rsf read --section <id>）：')
     for (const s of r.sections) out.push(`  - ${s.id}: ${s.title}${s.chars !== undefined ? `（${s.chars}${typeof s.chars === 'number' ? ' 字' : ''}）` : ''}`)
   }
   if (r.lib?.functions?.length) {
-    out.push('', `这个网站有函数库 ${r.lib.domain}（bx call ${r.lib.domain} <函数> [参数] [--选项 值]；详细用法 bx lib list ${r.lib.domain}）：`)
+    out.push('', `这个网站有函数库 ${r.lib.domain}（rsf call ${r.lib.domain} <函数> [参数] [--选项 值]；详细用法 rsf lib list ${r.lib.domain}）：`)
     for (const f of r.lib.functions) out.push(`  ${f.signature}${f.summary ? '  — ' + f.summary : ''}`)
   }
   return out.join('\n')

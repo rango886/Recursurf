@@ -2,8 +2,8 @@ import WebSocket from 'ws'
 import fs from 'node:fs'
 import path from 'node:path'
 import { spawn } from 'node:child_process'
-import { DAEMON_FILE, REPO_ROOT, BX_HOME, ensureDir } from './paths.ts'
-import { BxError, sleep } from './util.ts'
+import { DAEMON_FILE, REPO_ROOT, RSF_HOME, ensureDir } from './paths.ts'
+import { RsfError, sleep } from './util.ts'
 
 interface DaemonInfo {
   port: number
@@ -29,14 +29,14 @@ export class RpcClient {
     const c = new RpcClient()
     let info = readDaemonInfo()
     if (info && (await c.tryOpen(info))) return c
-    if (opts.autostart === false) throw new BxError('NO_DAEMON', 'daemon 没有运行', '执行 `bx daemon start`')
+    if (opts.autostart === false) throw new RsfError('NO_DAEMON', 'daemon 没有运行', '执行 `rsf daemon start`')
     startDaemonDetached()
     for (let i = 0; i < 50; i++) {
       await sleep(200)
       info = readDaemonInfo()
       if (info && (await c.tryOpen(info))) return c
     }
-    throw new BxError('NO_DAEMON', 'daemon 启动失败', `查看日志 ${path.join(BX_HOME, 'daemon.log')}`)
+    throw new RsfError('NO_DAEMON', 'daemon 启动失败', `查看日志 ${path.join(RSF_HOME, 'daemon.log')}`)
   }
 
   private tryOpen(info: DaemonInfo): Promise<boolean> {
@@ -46,7 +46,7 @@ export class RpcClient {
         this.ws = ws
         ws.on('message', d => this.onMessage(String(d)))
         ws.on('close', () => {
-          for (const p of this.pending.values()) p.reject(new BxError('DISCONNECTED', 'daemon 连接断开'))
+          for (const p of this.pending.values()) p.reject(new RsfError('DISCONNECTED', 'daemon 连接断开'))
           this.pending.clear()
         })
         resolve(true)
@@ -60,7 +60,7 @@ export class RpcClient {
     const p = this.pending.get(msg.id)
     if (!p) return
     this.pending.delete(msg.id)
-    if (msg.error) p.reject(new BxError(msg.error.code || 'ERROR', msg.error.message, msg.error.hint))
+    if (msg.error) p.reject(new RsfError(msg.error.code || 'ERROR', msg.error.message, msg.error.hint))
     else p.resolve(msg.result)
   }
 
@@ -78,8 +78,8 @@ export class RpcClient {
 }
 
 export function startDaemonDetached() {
-  ensureDir(BX_HOME)
-  const log = fs.openSync(path.join(BX_HOME, 'daemon.log'), 'a')
+  ensureDir(RSF_HOME)
+  const log = fs.openSync(path.join(RSF_HOME, 'daemon.log'), 'a')
   const child = spawn(process.execPath, [path.join(REPO_ROOT, 'src', 'daemon', 'main.ts')], {
     detached: true,
     stdio: ['ignore', log, log],

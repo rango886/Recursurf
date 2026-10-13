@@ -193,7 +193,7 @@ export async function snapshot(s: TabSession, opts: SnapshotOpts = {}) {
     if (props.length) line += ` [${props.join(', ')}]`
     const val = n.value?.value
     if (val !== undefined && val !== '' && role !== 'link' && val !== name) line += `: ${clip(String(val), 120)}`
-    // 原生下拉框：选项压成一行（用 bx select 选）
+    // 原生下拉框：选项压成一行（用 rsf select 选）
     if (role === 'combobox') {
       const popup = kids().find(c => c?.role?.value === 'MenuListPopup')
       if (popup) {
@@ -231,7 +231,7 @@ export async function snapshot(s: TabSession, opts: SnapshotOpts = {}) {
 
   const url = await s.evaluate('location.href').catch(() => '')
   const header = [`# ${title || '(无标题)'}`, `url: ${url}`]
-  if (truncated) header.push(`(已截断到 ${maxLines} 行；用 --max 调大，或用 -i 只看可操作元素，或用 bx read 读内容)`)
+  if (truncated) header.push(`(已截断到 ${maxLines} 行；用 --max 调大，或用 -i 只看可操作元素，或用 rsf read 读内容)`)
   if (skippedFrames.length) header.push(`(跨域 iframe 未展开：${skippedFrames.slice(0, 3).join(', ')})`)
   return { text: header.join('\n') + '\n' + lines.join('\n'), refs: s.refs.size, truncated }
 }

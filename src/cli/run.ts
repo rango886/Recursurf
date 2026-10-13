@@ -3,20 +3,20 @@ import path from 'node:path'
 import vm from 'node:vm'
 import { createRequire } from 'node:module'
 import { pathToFileURL } from 'node:url'
-import { BX_HOME, REPO_ROOT, ensureDir } from '../common/paths.ts'
-import { BxError } from '../common/util.ts'
-import { createBx } from '../sdk/index.ts'
+import { RSF_HOME, REPO_ROOT, ensureDir } from '../common/paths.ts'
+import { RsfError } from '../common/util.ts'
+import { createRsf } from '../sdk/index.ts'
 import { render, type Format } from './output.ts'
 
 /**
- * bx run '<代码>' | -f 文件.js
+ * rsf run '<代码>' | -f 文件.js
  * 代码按 ES 模块执行：支持顶层 await、import node:fs 等；return 的值打印出来。
- * 全局有 bx 和 BxError。只有一个表达式时可以不写 return。
+ * 全局有 rsf 和 RsfError。只有一个表达式时可以不写 return。
  */
 
 const IMPORT_RE = /^[ \t]*import(?!\s*[(.])\s*(?:[\w$*{}\s,]+?\s*from\s*)?(['"])([^'"\n]+)\1[ \t]*;?/gm
 
-/** 把 import 的地址换成绝对地址：相对路径按脚本所在目录，包名按脚本目录 → bx 自己的依赖去找 */
+/** 把 import 的地址换成绝对地址：相对路径按脚本所在目录，包名按脚本目录 → rsf 自己的依赖去找 */
 function resolveSpec(spec: string, baseDir: string) {
   if (/^(node:|data:|file:|https?:)/.test(spec)) return spec
   if (spec.startsWith('.') || spec.startsWith('/') || /^[a-zA-Z]:[\\/]/.test(spec)) return pathToFileURL(path.resolve(baseDir, spec)).href
@@ -41,7 +41,7 @@ export function buildModule(code: string, baseDir: string) {
     imports.push(m.trim().replace(/;?$/, ';').replace(`${q}${spec}${q}`, JSON.stringify(resolveSpec(spec, baseDir))))
     return m.replace(/[^\n]/g, '')
   })
-  // 只有一个表达式（比如 `await bx.tabs()`）时自动 return 它
+  // 只有一个表达式（比如 `await rsf.tabs()`）时自动 return 它
   let expr = false
   if (!/\breturn\b/.test(body) && body.trim()) {
     try {
@@ -49,7 +49,7 @@ export function buildModule(code: string, baseDir: string) {
       expr = true
     } catch {}
   }
-  const head = imports.join(' ') + ' export default async function __bx_run() {'
+  const head = imports.join(' ') + ' export default async function __rsf_run() {'
   return expr ? `${head} return (${body}\n) }\n` : `${head}${body}\n}\n`
 }
 
@@ -88,7 +88,7 @@ function parseRunArgs(argv: string[]): RunArgs {
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
     const next = () => {
-      if (argv[i + 1] === undefined) throw new BxError('BAD_ARGS', `${a} 后面要跟一个值`)
+      if (argv[i + 1] === undefined) throw new RsfError('BAD_ARGS', `${a} 后面要跟一个值`)
       return argv[++i]
     }
     if (a === '-f' || a === '--file') r.file = next()
@@ -107,29 +107,29 @@ function parseRunArgs(argv: string[]): RunArgs {
   return r
 }
 
-export const RUN_HELP = `bx run '<代码>' [参数...]      bx run -f 文件.js [参数...]      echo '代码' | bx run -
+export const RUN_HELP = `rsf run '<代码>' [参数...]      rsf run -f 文件.js [参数...]      echo '代码' | rsf run -
 
 在 Node 里执行 JS（ES 模块）：支持顶层 await，可以 import node:fs 等；return 的值打印出来。
-全局有 bx 对象（bx.tab / bx.open / bx.tabs / bx.read / bx.lib / bx.log / bx.sleep）和 BxError。
-只有一个表达式时可以不写 return，比如：bx run 'await bx.tabs()'
-每次跑完进程就退出；标签、登录状态、网络记录都在 daemon 里，下次 bx.tab('t5') 就能拿回来。
+全局有 rsf 对象（rsf.tab / rsf.open / rsf.tabs / rsf.read / rsf.lib / rsf.log / rsf.sleep）和 RsfError。
+只有一个表达式时可以不写 return，比如：rsf run 'await rsf.tabs()'
+每次跑完进程就退出；标签、登录状态、网络记录都在 daemon 里，下次 rsf.tab('t5') 就能拿回来。
 
 选项：
   -f, --file <文件>     从文件读代码（相对 import 按文件所在目录解析）
-  -t, --tab <标签>      bx.tab() 默认用这个标签
-  --browser <名字>      bx.open / bx.tab 用哪个浏览器
+  -t, --tab <标签>      rsf.tab() 默认用这个标签
+  --browser <名字>      rsf.open / rsf.tab 用哪个浏览器
   -o <格式>             text|json|yaml|jsonl|csv|table
-  --max <字数>          结果超过这么多字（默认 20000）就写到 ~/.bx/out/ 下，只打印摘要和路径；0 表示不限
-  其余参数放在 bx.args 里
+  --max <字数>          结果超过这么多字（默认 20000）就写到 ~/.rsf/out/ 下，只打印摘要和路径；0 表示不限
+  其余参数放在 rsf.args 里
 
 例：
-  bx run 'const t = await bx.open("https://example.com"); const r = await t.eval(() => document.title); await t.close(); return r'
-  bx run 'return bx.lib("bilibili.com").search("纪录片", { limit: 5 })'
-  bx run -f research/step1.js`
+  rsf run 'const t = await rsf.open("https://example.com"); const r = await t.eval(() => document.title); await t.close(); return r'
+  rsf run 'return rsf.lib("bilibili.com").search("纪录片", { limit: 5 })'
+  rsf run -f research/step1.js`
 
 export async function runCode(argv: string[]) {
   if (argv.includes('--help') || argv.includes('-h') || !argv.length) {
-    if (!argv.length && process.stdin.isTTY) throw new BxError('BAD_ARGS', '缺少要执行的代码', "例：bx run 'return await bx.tabs()'，或 bx run -f x.js")
+    if (!argv.length && process.stdin.isTTY) throw new RsfError('BAD_ARGS', '缺少要执行的代码', "例：rsf run 'return await rsf.tabs()'，或 rsf run -f x.js")
     if (argv.length) return console.log(RUN_HELP)
   }
   const a = parseRunArgs(argv)
@@ -148,12 +148,12 @@ export async function runCode(argv: string[]) {
     label = '<run>'
   }
 
-  const bx = createBx({ tab: a.tab || process.env.BX_TAB, browser: a.browser })
-  bx.args = a.args
-  ;(globalThis as any).bx = bx
-  ;(globalThis as any).BxError = BxError
+  const rsf = createRsf({ tab: a.tab || process.env.RSF_TAB, browser: a.browser })
+  rsf.args = a.args
+  ;(globalThis as any).rsf = rsf
+  ;(globalThis as any).RsfError = RsfError
 
-  const tmp = path.join(ensureDir(path.join(BX_HOME, 'run')), `run-${process.pid}-${Date.now()}.mjs`)
+  const tmp = path.join(ensureDir(path.join(RSF_HOME, 'run')), `run-${process.pid}-${Date.now()}.mjs`)
   fs.writeFileSync(tmp, buildModule(code, baseDir))
   let result: any
   try {
@@ -170,17 +170,17 @@ export async function runCode(argv: string[]) {
       const src = code.split('\n')[line - 1]
       e.where = `${label}:${line}${src !== undefined ? `  ${src.trim().slice(0, 120)}` : ''}`
     }
-    if (e instanceof SyntaxError) (e as any).hint ??= '代码有语法错误；注意 bx run 的代码在 Node 里执行，要在页面里跑的代码用 tab.eval(() => …)'
+    if (e instanceof SyntaxError) (e as any).hint ??= '代码有语法错误；注意 rsf run 的代码在 Node 里执行，要在页面里跑的代码用 tab.eval(() => …)'
     throw e
   } finally {
-    bx.close()
+    rsf.close()
   }
 
   if (result === undefined) return
-  const fmt: Format = a.output || (process.env.BX_FORMAT as Format) || 'text'
+  const fmt: Format = a.output || (process.env.RSF_FORMAT as Format) || 'text'
   const s = render(result, fmt)
   if (a.max > 0 && s.length > a.max) {
-    const dir = ensureDir(path.join(BX_HOME, 'out'))
+    const dir = ensureDir(path.join(RSF_HOME, 'out'))
     const stamp = new Date().toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 15)
     const isText = typeof result === 'string'
     const file = path.join(dir, `run-${stamp}.${isText ? 'txt' : 'json'}`)

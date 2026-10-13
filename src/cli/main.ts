@@ -2,18 +2,18 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { parseArgs } from 'node:util'
 import { RpcClient, readDaemonInfo } from '../common/rpc.ts'
-import { BX_HOME, REPO_ROOT } from '../common/paths.ts'
-import { BxError, sleep } from '../common/util.ts'
+import { RSF_HOME, REPO_ROOT } from '../common/paths.ts'
+import { RsfError, sleep } from '../common/util.ts'
 import { render, type Format } from './output.ts'
 import { runCode } from './run.ts'
 import { runCall, libList } from './call.ts'
 import { libTest, testSummary } from './libtest.ts'
-import { createBx } from '../sdk/index.ts'
+import { createRsf } from '../sdk/index.ts'
 import { digestTrace, showRequest, findInTrace } from '../trace/digest.ts'
 
 function traceDirOf(name: string) {
-  const d = path.join(BX_HOME, 'traces', name)
-  if (!fs.existsSync(path.join(d, 'trace.json'))) throw new BxError('NO_TRACE', `没有 trace ${name}`, '`bx trace list` 查看已有的录制')
+  const d = path.join(RSF_HOME, 'traces', name)
+  if (!fs.existsSync(path.join(d, 'trace.json'))) throw new RsfError('NO_TRACE', `没有 trace ${name}`, '`rsf trace list` 查看已有的录制')
   return d
 }
 
@@ -54,7 +54,7 @@ function splitAssign(s: string): [string, string] | null {
 function readCode(pos: string[], o: any): string {
   if (o.file) return fs.readFileSync(o.file, 'utf8')
   if (pos[0] === '-' || (!pos.length && !process.stdin.isTTY)) return fs.readFileSync(0, 'utf8')
-  if (!pos.length) throw new BxError('BAD_ARGS', '缺少要执行的代码', '例：bx eval "document.title"，或 --file x.js，或从 stdin 传')
+  if (!pos.length) throw new RsfError('BAD_ARGS', '缺少要执行的代码', '例：rsf eval "document.title"，或 --file x.js，或从 stdin 传')
   return pos.join(' ')
 }
 
@@ -99,7 +99,7 @@ const COMMANDS: Record<string, Cmd> = {
   'daemon log': {
     summary: '查看 daemon 日志最后几行',
     opts: { lines: { type: 'string', short: 'n' } },
-    run: async (_, o) => fs.readFileSync(path.join(BX_HOME, 'daemon.log'), 'utf8').split('\n').slice(-(Number(o.lines) || 40)).join('\n'),
+    run: async (_, o) => fs.readFileSync(path.join(RSF_HOME, 'daemon.log'), 'utf8').split('\n').slice(-(Number(o.lines) || 40)).join('\n'),
   },
 
   // ---------------- 浏览器 ----------------
@@ -108,7 +108,7 @@ const COMMANDS: Record<string, Cmd> = {
     args: '[name]',
     summary: '启动一个专用浏览器（独立 profile，登录一次后会一直保留）',
     opts: { headless: { type: 'boolean', desc: '无头模式' }, exe: { type: 'string', desc: '浏览器路径' }, port: { type: 'string' } },
-    run: async (p, o, rpc) => (await rpc()).call('browser.launch', { name: p[0] || 'bx', headless: o.headless, executable: o.exe, port: num(o.port) }),
+    run: async (p, o, rpc) => (await rpc()).call('browser.launch', { name: p[0] || 'rsf', headless: o.headless, executable: o.exe, port: num(o.port) }),
   },
   'browser connect': {
     args: '<cdp-url>',
@@ -195,9 +195,9 @@ const COMMANDS: Record<string, Cmd> = {
       browser: { type: 'string', desc: '给了网址时在哪个浏览器里开' },
     },
     run: async (p, o) => {
-      const bx = createBx({ tab: o.tab, browser: o.browser })
+      const rsf = createRsf({ tab: o.tab, browser: o.browser })
       try {
-        const r = await bx.read(p[0], {
+        const r = await rsf.read(p[0], {
           mode: o.brief ? 'brief' : o.full ? 'full' : 'default',
           section: o.section,
           offset: num(o.offset),
@@ -213,7 +213,7 @@ const COMMANDS: Record<string, Cmd> = {
         if (p[0] && !o.keep) delete r.tab
         return r
       } finally {
-        bx.close()
+        rsf.close()
       }
     },
   },
@@ -225,7 +225,7 @@ const COMMANDS: Record<string, Cmd> = {
   },
   eval: {
     args: '<code> [目标]',
-    summary: '在页面里执行 JS（支持 await），返回结果；给了目标时 code 是函数，参数是那个元素：bx eval "el => el.href" e5',
+    summary: '在页面里执行 JS（支持 await），返回结果；给了目标时 code 是函数，参数是那个元素：rsf eval "el => el.href" e5',
     opts: { file: { type: 'string', short: 'f' }, target: { type: 'string', desc: '在哪个元素上执行' }, isolated: { type: 'boolean', desc: '在隔离环境执行（插件模式，不被页面察觉）' } },
     run: async (p, o, rpc) => {
       let target = o.target
@@ -278,7 +278,7 @@ const COMMANDS: Record<string, Cmd> = {
       if (first) {
         const fields = p.map(x => {
           const kv = splitAssign(x)
-          if (!kv) throw new BxError('BAD_ARGS', `一次填多个时，每项都要写成 目标=值：${x}`)
+          if (!kv) throw new RsfError('BAD_ARGS', `一次填多个时，每项都要写成 目标=值：${x}`)
           return { target: kv[0], value: kv[1] }
         })
         return (await rpc()).call('page.fillMany', { tab: o.tab, fields, snap: o.snap })
@@ -318,13 +318,13 @@ const COMMANDS: Record<string, Cmd> = {
     summary: '在 snapshot 里搜文字，只返回匹配的那几行和编号（不用看整页）',
     opts: { max: { type: 'string', desc: '最多列几处（默认 30）' } },
     run: async (p, o, rpc) => {
-      if (!p.length) throw new BxError('BAD_ARGS', '要搜什么文字？', '例：bx find 加入购物车')
+      if (!p.length) throw new RsfError('BAD_ARGS', '要搜什么文字？', '例：rsf find 加入购物车')
       return (await rpc()).call('page.find', { tab: o.tab, text: p.join(' '), max: num(o.max) })
     },
   },
   'mouse click': {
     args: '<x> <y>',
-    summary: '按坐标点击（canvas、地图、在线文档画布）；坐标用 bx shot 看',
+    summary: '按坐标点击（canvas、地图、在线文档画布）；坐标用 rsf shot 看',
     opts: { right: { type: 'boolean' }, double: { type: 'boolean' }, middle: { type: 'boolean' }, ...snapOpt },
     run: async (p, o, rpc) => (await rpc()).call('input.mouse', { tab: o.tab, action: 'click', x: num(p[0]), y: num(p[1]), right: o.right, double: o.double, middle: o.middle, snap: o.snap }),
   },
@@ -395,7 +395,7 @@ const COMMANDS: Record<string, Cmd> = {
       let body = o.fulfill
       if (body?.startsWith('@')) body = fs.readFileSync(body.slice(1), 'utf8')
       const action = o.abort ? 'abort' : body !== undefined ? 'fulfill' : 'continue'
-      if (action === 'continue' && !headers) throw new BxError('BAD_ARGS', '需要 --abort / --fulfill / --header 之一')
+      if (action === 'continue' && !headers) throw new RsfError('BAD_ARGS', '需要 --abort / --fulfill / --header 之一')
       return (await rpc()).call('net.route.add', { tab: o.tab, pattern: p[0], action, status: num(o.status), body, contentType: o['content-type'], headers })
     },
   },
@@ -403,14 +403,14 @@ const COMMANDS: Record<string, Cmd> = {
   'net route rm': { args: '[id]', summary: '删除拦截规则（不给 id 删全部）', run: async (p, o, rpc) => (await rpc()).call('net.route.rm', { tab: o.tab, id: p[0] }) },
 
   // ---------------- 函数库 / 脚本 ----------------
-  run: { args: "'<代码>' | -f 文件.js", summary: '在 Node 里执行 JS（全局有 bx），支持顶层 await 和 import，return 的值打印出来；结果太大写到 ~/.bx/out/', run: async () => null },
+  run: { args: "'<代码>' | -f 文件.js", summary: '在 Node 里执行 JS（全局有 rsf），支持顶层 await 和 import，return 的值打印出来；结果太大写到 ~/.rsf/out/', run: async () => null },
   call: { args: '<域名> <函数> [参数...] [--选项 值]', summary: '调函数库里的函数；第一个参数写 - 就从 stdin 一行一条读，输出 JSONL', run: async () => null },
   'lib list': {
     args: '[域名]',
     summary: '有哪些函数库；给域名就显示站点笔记 + 每个函数的签名、说明、例子',
-    run: async (p, o) => libList(p[0], (o.output as Format) || (process.env.BX_FORMAT as Format) || 'text'),
+    run: async (p, o) => libList(p[0], (o.output as Format) || (process.env.RSF_FORMAT as Format) || 'text'),
   },
-  'lib show': { args: '<域名>', summary: '同 bx lib list <域名>', run: async (p, o) => libList(p[0] || '', (o.output as Format) || (process.env.BX_FORMAT as Format) || 'text') },
+  'lib show': { args: '<域名>', summary: '同 rsf lib list <域名>', run: async (p, o) => libList(p[0] || '', (o.output as Format) || (process.env.RSF_FORMAT as Format) || 'text') },
   'lib test': {
     args: '<域名> [函数...]',
     summary: '把函数库里的 @example 当测试跑，按错误码分类：真坏了 / 要登录 / 被拦 / 例子过期；改完函数库用它验证',
@@ -424,7 +424,7 @@ const COMMANDS: Record<string, Cmd> = {
     },
     run: async (p, o) => {
       const r = await libTest(p[0], p.slice(1), { all: o.all, dry: o.dry, clean: o.clean, timeout: num(o.timeout), delay: num(o.delay) ?? 1000, tab: o.tab, browser: o.browser })
-      const fmt = (o.output as Format) || (process.env.BX_FORMAT as Format) || 'text'
+      const fmt = (o.output as Format) || (process.env.RSF_FORMAT as Format) || 'text'
       return fmt === 'text' ? testSummary(r, o.dry) : r
     },
   },
@@ -451,7 +451,7 @@ const COMMANDS: Record<string, Cmd> = {
     args: '<name>',
     summary: '（重新）生成并显示调查报告',
     run: async p => {
-      if (!p[0]) throw new BxError('BAD_ARGS', '需要 trace 名字', '`bx trace list`')
+      if (!p[0]) throw new RsfError('BAD_ARGS', '需要 trace 名字', '`rsf trace list`')
       return digestTrace(traceDirOf(p[0])).text
     },
   },
@@ -483,7 +483,7 @@ const GROUPS: [string, string[]][] = [
 ]
 
 function help() {
-  const lines = ['bx — 给 AI 用的浏览器控制工具', '', '用法：bx <命令> [参数] [-t 标签] [-o text|json|yaml|jsonl|csv|table]', '']
+  const lines = ['rsf — 给 AI 用的浏览器控制工具', '', '用法：rsf <命令> [参数] [-t 标签] [-o text|json|yaml|jsonl|csv|table]', '']
   for (const [title, names] of GROUPS) {
     lines.push(`${title}：`)
     for (const n of names) {
@@ -493,13 +493,13 @@ function help() {
     lines.push('')
   }
   lines.push("目标元素的写法：snapshot 编号 e15 ｜ CSS 选择器 \"#main button.submit\" ｜ getByRole('button', { name: '提交' }) ｜ getByLabel('邮箱') ｜ getByText('下一步')")
-  lines.push('典型流程：bx read <网址>（看内容）→ bx tab open <url> --bg --keep → bx snapshot -i -t t5 → bx click e3 -t t5；摸通了写成 ~/.bx/lib/<域名>.js，用 bx call / bx run 调')
-  lines.push('环境变量：BX_TAB 固定操作某个标签（多个 agent 并行时用）；BX_FORMAT 默认输出格式')
+  lines.push('典型流程：rsf read <网址>（看内容）→ rsf tab open <url> --bg --keep → rsf snapshot -i -t t5 → rsf click e3 -t t5；摸通了写成 ~/.rsf/lib/<域名>.js，用 rsf call / rsf run 调')
+  lines.push('环境变量：RSF_TAB 固定操作某个标签（多个 agent 并行时用）；RSF_FORMAT 默认输出格式')
   return lines.join('\n')
 }
 
 function cmdHelp(name: string, c: Cmd) {
-  const lines = [`bx ${name}${c.args ? ' ' + c.args : ''}`, '', c.summary]
+  const lines = [`rsf ${name}${c.args ? ' ' + c.args : ''}`, '', c.summary]
   const opts = Object.entries(c.opts || {})
   if (opts.length) {
     lines.push('', '选项：')
@@ -511,14 +511,14 @@ function cmdHelp(name: string, c: Cmd) {
 
 async function main() {
   const argv = process.argv.slice(2)
-  // 写在命令前面的全局参数：bx -t t2 read / bx -o json tab list
+  // 写在命令前面的全局参数：rsf -t t2 read / rsf -o json tab list
   const pre: Record<string, string> = {}
   while (argv.length && /^(-t|--tab|-o|--output|--browser)$/.test(argv[0]) && argv[1] !== undefined) {
     const k = argv.shift()!
     pre[k === '-t' || k === '--tab' ? 'tab' : k === '--browser' ? 'browser' : 'output'] = argv.shift()!
   }
-  if (pre.tab) process.env.BX_TAB = pre.tab
-  if (pre.output) process.env.BX_FORMAT = pre.output
+  if (pre.tab) process.env.RSF_TAB = pre.tab
+  if (pre.output) process.env.RSF_FORMAT = pre.output
   if (!argv.length || argv[0] === 'help' || argv[0] === '--help' || argv[0] === '-h') return console.log(help())
   if (argv[0] === '--version' || argv[0] === '-v') return console.log(JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8')).version)
 
@@ -533,13 +533,13 @@ async function main() {
   }
 
   if (!name) {
-    // 命名空间下的帮助：bx tab / bx net
+    // 命名空间下的帮助：rsf tab / rsf net
     const sub = Object.keys(COMMANDS).filter(k => k.startsWith(argv[0] + ' '))
     if (sub.length) {
-      console.log(sub.map(k => `  bx ${(k + (COMMANDS[k].args ? ' ' + COMMANDS[k].args : '')).padEnd(34)} ${COMMANDS[k].summary}`).join('\n'))
+      console.log(sub.map(k => `  rsf ${(k + (COMMANDS[k].args ? ' ' + COMMANDS[k].args : '')).padEnd(34)} ${COMMANDS[k].summary}`).join('\n'))
       return
     }
-    throw new BxError('UNKNOWN_COMMAND', `未知命令：${argv[0]}`, '`bx help` 查看所有命令；网站相关的功能在函数库里：`bx lib list`，用 `bx call <域名> <函数>` 调')
+    throw new RsfError('UNKNOWN_COMMAND', `未知命令：${argv[0]}`, '`rsf help` 查看所有命令；网站相关的功能在函数库里：`rsf lib list`，用 `rsf call <域名> <函数>` 调')
   }
 
   const cmd = COMMANDS[name]
@@ -557,14 +557,14 @@ async function main() {
   const { values, positionals: rawPos } = parseArgs({ args, options, allowPositionals: true, strict: true })
   const positionals = rawPos.map(a => (a.startsWith(NEG) ? a.slice(1) : a))
   const o: any = { ...values }
-  o.tab ||= process.env.BX_TAB
+  o.tab ||= process.env.RSF_TAB
   o.browser ||= pre.browser
 
   let client: RpcClient | undefined
   const rpc = async () => (client ||= await RpcClient.connect())
   try {
     const result = await cmd.run(positionals, o, rpc)
-    const fmt: Format = (o.output as Format) || (process.env.BX_FORMAT as Format) || 'text'
+    const fmt: Format = (o.output as Format) || (process.env.RSF_FORMAT as Format) || 'text'
     const s = render(result, fmt, cmd.kind)
     if (s) console.log(s)
   } finally {
@@ -573,13 +573,13 @@ async function main() {
 }
 
 main().catch(e => {
-  if (e instanceof BxError || e?.code) {
+  if (e instanceof RsfError || e?.code) {
     process.stderr.write(`✗ ${e.code && !['ERROR', 'BAD_ARGS'].includes(e.code) && !String(e.code).startsWith('ERR_') ? `[${e.code}] ` : ''}${e.message}\n${e.hint ? '  → ' + e.hint + '\n' : ''}`)
   } else {
     process.stderr.write(`✗ ${e?.message || e}\n`)
   }
   if (e?.where) process.stderr.write(`  位置：${e.where}\n`)
-  if (e?.hint && !(e instanceof BxError || e?.code)) process.stderr.write(`  → ${e.hint}\n`)
+  if (e?.hint && !(e instanceof RsfError || e?.code)) process.stderr.write(`  → ${e.hint}\n`)
   process.exitCode = e?.code === 'BAD_ARGS' || e?.code === 'ERR_PARSE_ARGS_UNKNOWN_OPTION' ? 2 : 1
 })
 

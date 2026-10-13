@@ -1,5 +1,5 @@
 /** 给 AI 看的错误：message 说清楚发生了什么，hint 说下一步怎么做 */
-export class BxError extends Error {
+export class RsfError extends Error {
   code: string
   hint?: string
   constructor(code: string, message: string, hint?: string) {
@@ -19,7 +19,7 @@ export function withTimeout<T>(p: Promise<T>, ms: number, what: string): Promise
   return Promise.race([
     p.finally(() => clearTimeout(t)),
     new Promise<T>((_, rej) => {
-      t = setTimeout(() => rej(new BxError('TIMEOUT', `${what} 超时 (${ms}ms)`)), ms)
+      t = setTimeout(() => rej(new RsfError('TIMEOUT', `${what} 超时 (${ms}ms)`)), ms)
     }),
   ])
 }
@@ -42,7 +42,7 @@ export function urlPattern(pattern: string): RegExp | null {
     try {
       return new RegExp(m[1], m[2])
     } catch (e: any) {
-      throw new BxError('BAD_ARGS', `正则写错了：${pattern}（${e.message}）`, '正则写成 /.../flags；只想按子串匹配就不要用斜杠包起来')
+      throw new RsfError('BAD_ARGS', `正则写错了：${pattern}（${e.message}）`, '正则写成 /.../flags；只想按子串匹配就不要用斜杠包起来')
     }
   }
   if (pattern.includes('*')) return globToRegExp(pattern)

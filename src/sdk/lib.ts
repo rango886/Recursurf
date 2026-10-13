@@ -2,11 +2,11 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { searchDirs } from '../common/paths.ts'
-import { BxError } from '../common/util.ts'
+import { RsfError } from '../common/util.ts'
 
 /**
  * 函数库：按域名存放的普通 JS 模块 lib/<域名>.js，导出几个 async 函数。
- * 查找顺序：<项目>/.bx/lib → ~/.bx/lib → 仓库 lib/；先找完整域名，找不到再找上一级（www.bilibili.com → bilibili.com）。
+ * 查找顺序：<项目>/.rsf/lib → ~/.rsf/lib → 仓库 lib/；先找完整域名，找不到再找上一级（www.bilibili.com → bilibili.com）。
  * 文件名以 _ 开头的只放共享代码，不算函数库。
  */
 
@@ -56,7 +56,7 @@ export async function importLib(e: LibEntry): Promise<Record<string, any>> {
   try {
     return await import(pathToFileURL(e.file).href + '?v=' + fs.statSync(e.file).mtimeMs)
   } catch (err: any) {
-    throw new BxError('LIB_ERROR', `加载 ${e.file} 出错：${err.message}`, '修好这个文件里的语法 / import 错误')
+    throw new RsfError('LIB_ERROR', `加载 ${e.file} 出错：${err.message}`, '修好这个文件里的语法 / import 错误')
   }
 }
 
@@ -97,7 +97,7 @@ export interface LibFn {
   generator?: boolean
   /** 函数自己写的 @login；没写时看站点的 */
   login?: LoginInfo
-  /** @test：bx lib test 怎么跑这个函数的例子 */
+  /** @test：rsf lib test 怎么跑这个函数的例子 */
   test?: LibTest
 }
 
@@ -349,9 +349,9 @@ export function libInfo(e: LibEntry): LibInfo {
   return { ...e, ...parseLibSource(fs.readFileSync(e.file, 'utf8')) }
 }
 
-/** 命令行写法：bx call <域名> <函数> <参数> [--选项 值] */
+/** 命令行写法：rsf call <域名> <函数> <参数> [--选项 值] */
 export function cliUsage(domain: string, f: LibFn) {
-  const parts = [`bx call ${domain} ${f.name}`]
+  const parts = [`rsf call ${domain} ${f.name}`]
   for (const p of f.params) {
     if (p.options) {
       for (const o of p.options) parts.push(o.type === 'boolean' ? `[--${o.name}]` : `[--${o.name} ${o.default !== undefined ? o.default.replace(/^['"`]|['"`]$/g, '') : '<值>'}]`)
@@ -361,21 +361,21 @@ export function cliUsage(domain: string, f: LibFn) {
   return parts.join(' ')
 }
 
-/** bx lib list <域名> 的文本 */
+/** rsf lib list <域名> 的文本 */
 export function describeLib(info: LibInfo, opts: { notes?: boolean } = {}) {
   const L: string[] = [`${info.domain}  （${info.scope}：${info.file}）`]
   const site = info.login || { level: 'none' as const }
   L.push(`登录：${LOGIN_LABEL[site.level]}${site.note ? ' — ' + site.note : ''}${site.level === 'required' ? '（没登录会报 NEED_LOGIN，请用户在浏览器里登录这个网站）' : ''}`)
   if (opts.notes !== false && info.notes) L.push('', ...(/^站点笔记/.test(info.notes) ? [] : ['站点笔记：']), ...info.notes.split('\n').map(l => '  ' + l))
-  L.push('', `函数（bx call ${info.domain} <函数> …，或在 bx run 里 bx.lib('${info.domain}').<函数>(…)）：`)
+  L.push('', `函数（rsf call ${info.domain} <函数> …，或在 rsf run 里 rsf.lib('${info.domain}').<函数>(…)）：`)
   for (const f of info.functions) {
     L.push('', `  ${f.signature}`)
     if (f.desc) L.push(...f.desc.split('\n').map(l => '      ' + l))
     if (f.login && (f.login.level !== site.level || f.login.note)) L.push(`      登录：${LOGIN_LABEL[f.login.level]}${f.login.note ? ' — ' + f.login.note : ''}`)
     for (const e of f.examples) L.push(`      例：${e}`)
-    if (f.test?.skip && f.examples.length) L.push(`      （bx lib test 不跑这个函数的例子：${f.test.skip}）`)
+    if (f.test?.skip && f.examples.length) L.push(`      （rsf lib test 不跑这个函数的例子：${f.test.skip}）`)
     if (f.name !== 'read') L.push(`      命令行：${cliUsage(info.domain, f)}`)
-    else L.push('      （bx read 打开这个域名的网址时会先用它）')
+    else L.push('      （rsf read 打开这个域名的网址时会先用它）')
   }
   if (!info.functions.length) L.push('  （没有导出函数）')
   return L.join('\n')

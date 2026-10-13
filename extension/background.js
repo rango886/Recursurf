@@ -1,4 +1,4 @@
-// BrowserX 插件：把浏览器能力通过 ws 暴露给本机的 bx daemon
+// Recursurf 插件：把浏览器能力通过 ws 暴露给本机的 rsf daemon
 // - 浏览器级：tabs / tabGroups / windows
 // - 页面级：chrome.debugger 转发 CDP（按需 attach）
 
@@ -57,7 +57,7 @@ function send(obj) {
 
 // 心跳：WebSocket 有活动时 MV3 service worker 不会被休眠（Chrome 116+）
 setInterval(() => send({ type: 'ping' }), 20_000)
-chrome.alarms.create('bx-keepalive', { periodInMinutes: 0.5 })
+chrome.alarms.create('rsf-keepalive', { periodInMinutes: 0.5 })
 chrome.alarms.onAlarm.addListener(() => connect())
 chrome.runtime.onStartup.addListener(connect)
 chrome.runtime.onInstalled.addListener(connect)

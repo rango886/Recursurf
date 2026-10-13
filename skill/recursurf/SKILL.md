@@ -1,20 +1,20 @@
 ---
-name: browserx
-description: BrowserX（命令 bx）：借用户已登录的浏览器上网。读网页、搜索和取数据（Google、B 站、YouTube、Reddit、HN、微博、知乎、小红书、雪球、东方财富、Yahoo Finance、arXiv、维基百科等 50 多个网站有现成函数）、跨多个网站检索调研、点击填表、上传下载、截图、看接口请求。只要任务要用到网页内容或网站操作（尤其是要登录的网站），就用它。
+name: recursurf
+description: Recursurf（命令 rsf）：借用户已登录的浏览器上网。读网页、搜索和取数据（Google、B 站、YouTube、Reddit、HN、微博、知乎、小红书、雪球、东方财富、Yahoo Finance、arXiv、维基百科等 50 多个网站有现成函数）、跨多个网站检索调研、点击填表、上传下载、截图、看接口请求。只要任务要用到网页内容或网站操作（尤其是要登录的网站），就用它。
 ---
 
-# BrowserX（bx）：借用户的浏览器上网
+# Recursurf（rsf）：借用户的浏览器上网
 
-`bx` 是命令行工具，后台 daemon 会自动启动。浏览器的登录状态、打开的标签、网络记录都存在 daemon 里，所以每条命令跑完就退出也不会丢东西。
+`rsf` 是命令行工具，后台 daemon 会自动启动。浏览器的登录状态、打开的标签、网络记录都存在 daemon 里，所以每条命令跑完就退出也不会丢东西。
 
 ## 0. 先选对工具
 
 | 要做的事 | 用什么 |
 |---|---|
-| 看一个网页讲了什么 | `bx read <网址>` |
-| 长文章 / 长评论区里只找和问题相关的部分 | `bx read <网址> --grep '关键词1\|关键词2'` |
-| 搜索引擎 | `bx call google.com search …`（被拦自动换必应 / DuckDuckGo）；中文内容加一路 `baidu.com` |
-| 在某个网站上搜索、取列表、取评论 | 先 `bx lib list` 看有没有现成函数；有就 `bx call <域名> <函数> …`（网站目录见第 4 节） |
+| 看一个网页讲了什么 | `rsf read <网址>` |
+| 长文章 / 长评论区里只找和问题相关的部分 | `rsf read <网址> --grep '关键词1\|关键词2'` |
+| 搜索引擎 | `rsf call google.com search …`（被拦自动换必应 / DuckDuckGo）；中文内容加一路 `baidu.com` |
+| 在某个网站上搜索、取列表、取评论 | 先 `rsf lib list` 看有没有现成函数；有就 `rsf call <域名> <函数> …`（网站目录见第 4 节） |
 | 视频讲了什么 | `youtube.com transcript` / `bilibili.com subtitles` 取字幕，B 站还有 `summary` |
 | 股票、公告、资金流、期货外汇、美股期权 | `xueqiu.com` / `eastmoney.com` / `sina.com.cn` / `finance.yahoo.com` / `barchart.com`，怎么选见第 4 节 |
 | 加密货币行情、市值榜、趋势币 | `binance.com` / `coingecko.com` |
@@ -23,29 +23,29 @@ description: BrowserX（命令 bx）：借用户已登录的浏览器上网。�
 | 依赖包详情、下载量、CVE / 开源漏洞 | `npmjs.com` / `pypi.org` / `crates.io` / `nvd.nist.gov` / `osv.dev` |
 | 英文新闻、Newsletter、新产品发布 | `bbc.com` / `substack.com` / `producthunt.com` / `lobste.rs` |
 | 中国政府和部委的政策文件 | `gov.cn`（搜索、最新列表、全文） |
-| 跨好几个网站调研一个问题 | `bx run -f 脚本.js`，分步做，见第 7 节 |
-| 一次做一串事、批量处理、拼接几个网站的数据 | `bx run`（写 JS，全局有 `bx` 对象） |
-| 在页面上点按钮、填表、上传、下载 | `bx snapshot -i` / `bx find` 找元素，然后 `bx click` / `bx fill` |
-| 想知道网站的数据来自哪个接口 | `bx net log --api -t <标签>`，然后 `bx net show <id>` |
+| 跨好几个网站调研一个问题 | `rsf run -f 脚本.js`，分步做，见第 7 节 |
+| 一次做一串事、批量处理、拼接几个网站的数据 | `rsf run`（写 JS，全局有 `rsf` 对象） |
+| 在页面上点按钮、填表、上传、下载 | `rsf snapshot -i` / `rsf find` 找元素，然后 `rsf click` / `rsf fill` |
+| 想知道网站的数据来自哪个接口 | `rsf net log --api -t <标签>`，然后 `rsf net show <id>` |
 
 **开工时先跑这两条**：
 
 ```bash
-bx browser list     # 有没有连上浏览器；有多个时问用户用哪个，之后都加 --browser <名字>
-bx lib list         # 有哪些网站的现成函数；[要登录] / [登录更好] 标出哪些站要用户先登录
+rsf browser list     # 有没有连上浏览器；有多个时问用户用哪个，之后都加 --browser <名字>
+rsf lib list         # 有哪些网站的现成函数；[要登录] / [登录更好] 标出哪些站要用户先登录
 ```
 
 任务要用到标了 `[要登录]` 的网站时，开工前就告诉用户“这几个站需要你在浏览器里登录”，别等报错了才说。
 
-`browser list` 为空：先等几秒再试（插件连上要一点时间）。还是空就请用户在 `chrome://extensions` 里加载仓库的 `extension/` 目录。用户不想用自己的浏览器时，用 `bx browser launch [名字]` 启动一个专用浏览器（无头加 `--headless`，但无头浏览器没有登录状态，很多网站会拦）。
+`browser list` 为空：先等几秒再试（插件连上要一点时间）。还是空就请用户在 `chrome://extensions` 里加载仓库的 `extension/` 目录。用户不想用自己的浏览器时，用 `rsf browser launch [名字]` 启动一个专用浏览器（无头加 `--headless`，但无头浏览器没有登录状态，很多网站会拦）。
 
 ## 1. 守则
 
-- **不打扰用户**：自己要用的标签在后台开（`bx tab open <url> --bg --keep` 或 `bx.open(url)`）。不要关闭或跳转用户自己的标签，用完自己开的标签要关掉（`bx tab close t5`，或在 `bx run` 里 `await bx.cleanup()`）。
+- **不打扰用户**：自己要用的标签在后台开（`rsf tab open <url> --bg --keep` 或 `rsf.open(url)`）。不要关闭或跳转用户自己的标签，用完自己开的标签要关掉（`rsf tab close t5`，或在 `rsf run` 里 `await rsf.cleanup()`）。
 - **每条页面命令都带 `-t <标签>`**，不要依赖“当前标签”，它可能被别的任务改掉。
-- **省上下文**：大块数据写进文件，只把摘要打印出来看（一行一条、长文本截断）。`bx run` 的结果超过 2 万字会自动写到 `~/.bx/out/`，只打印路径和摘要。
+- **省上下文**：大块数据写进文件，只把摘要打印出来看（一行一条、长文本截断）。`rsf run` 的结果超过 2 万字会自动写到 `~/.rsf/out/`，只打印路径和摘要。
 - **先读后操作**：查信息用 `read` / 函数库；要操作时再 `snapshot -i` 或 `find`；截图放到最后。
-- **遇到登录、验证码不要硬闯**：`bx tab activate <标签>` 把标签切到前台，请用户处理完再继续。
+- **遇到登录、验证码不要硬闯**：`rsf tab activate <标签>` 把标签切到前台，请用户处理完再继续。
 
 ## 2. 错误码怎么处理
 
@@ -57,35 +57,35 @@ bx lib list         # 有哪些网站的现成函数；[要登录] / [登录更�
 | `BLOCKED` | 验证码、风控、请求太频繁 | 停一停再试；有验证码就请用户在浏览器里处理（错误提示里有标签编号） |
 | `EMPTY` | 正常执行了，但没有结果 | 换关键词、放宽条件 |
 | `NOT_FOUND` | 帖子、用户、视频不存在 | 检查参数 |
-| `CHANGED` | 网站改版了，函数解析不出来 | 用 `bx read` 或 `bx run` 现场取数据，再修函数库里的那个函数 |
+| `CHANGED` | 网站改版了，函数解析不出来 | 用 `rsf read` 或 `rsf run` 现场取数据，再修函数库里的那个函数 |
 | `AMBIGUOUS` | 目标元素匹配到多个 | 照着列出的候选写得更具体，或者用 snapshot 编号 |
-| `STALE_REF` / `UNKNOWN_REF` | 编号失效（页面跳转了） | 重新 `bx snapshot -i` |
-| `COVERED` | 元素被弹层挡住了 | 先关掉弹层（`bx press Escape`，或点关闭按钮） |
-| `NO_LIB` / `NO_FUNCTION` | 没有这个函数库 / 函数 | `bx lib list [域名]` 看看有什么 |
+| `STALE_REF` / `UNKNOWN_REF` | 编号失效（页面跳转了） | 重新 `rsf snapshot -i` |
+| `COVERED` | 元素被弹层挡住了 | 先关掉弹层（`rsf press Escape`，或点关闭按钮） |
+| `NO_LIB` / `NO_FUNCTION` | 没有这个函数库 / 函数 | `rsf lib list [域名]` 看看有什么 |
 
 ## 3. 读网页
 
 ```bash
-bx read <网址>           # 后台开标签，读完关掉；--keep 保留（输出里有标签编号）
-bx read -t t5            # 读已经打开的标签
-bx read <网址> -b        # 只看概要和分段，最省 token
-bx read -t t5 -s comments   # 展开某一段（分段 id 见输出末尾）
-bx read -t t5 --offset 6000 # 内容被截断时接着读；--limit 50 列表多取几项；--budget 20000 放宽字数
-bx read <网址> --scroll 3   # 先往下滚 3 屏再读（懒加载的评论、无限滚动的列表）
-bx read <网址> --grep '断货|限购'      # 只看命中的段落（前后各带一段）；-C 0 不带上下文，-C 2 多带点
-bx read <网址> -s comments --grep AMD # 只在评论区里找
+rsf read <网址>           # 后台开标签，读完关掉；--keep 保留（输出里有标签编号）
+rsf read -t t5            # 读已经打开的标签
+rsf read <网址> -b        # 只看概要和分段，最省 token
+rsf read -t t5 -s comments   # 展开某一段（分段 id 见输出末尾）
+rsf read -t t5 --offset 6000 # 内容被截断时接着读；--limit 50 列表多取几项；--budget 20000 放宽字数
+rsf read <网址> --scroll 3   # 先往下滚 3 屏再读（懒加载的评论、无限滚动的列表）
+rsf read <网址> --grep '断货|限购'      # 只看命中的段落（前后各带一段）；-C 0 不带上下文，-C 2 多带点
+rsf read <网址> -s comments --grep AMD # 只在评论区里找
 ```
 
-- **长文章只关心其中几件事时用 `--grep`**，比读全文省很多：它在整篇内容里按段落找（一整段不换行的中文网页按句子找），相邻命中合并成一块。关键词按正则、不分大小写。每块前面的 `〔@1304〕` 是它在全文里的位置，`bx read --offset 1304` 从那里接着读。列表页上 `--grep` 是按条目过滤。脚本里：`(await bx.read(url, { grep: /断货|限购/ })).matches` → `[{ offset, text, hits }]`。
+- **长文章只关心其中几件事时用 `--grep`**，比读全文省很多：它在整篇内容里按段落找（一整段不换行的中文网页按句子找），相邻命中合并成一块。关键词按正则、不分大小写。每块前面的 `〔@1304〕` 是它在全文里的位置，`rsf read --offset 1304` 从那里接着读。列表页上 `--grep` 是按条目过滤。脚本里：`(await rsf.read(url, { grep: /断货|限购/ })).matches` → `[{ offset, text, hits }]`。
 - `via: lib:<域名>` 表示用的是函数库里的专用读法（最准），`readability` / `list` / `outline` 是通用提取。内容不对时可以用 `--via readability|list|outline` 手动指定。
 - **输出末尾如果列出了“这个网站有函数库 …”**，要批量取数据时就用那些函数，别自己去解析页面。
-- 出现 💡 提示页面里有 `window.__INITIAL_STATE__` 这类数据时，用 `bx eval "window.__INITIAL_STATE__.xxx" -t t5` 直接拿结构化数据。
+- 出现 💡 提示页面里有 `window.__INITIAL_STATE__` 这类数据时，用 `rsf eval "window.__INITIAL_STATE__.xxx" -t t5` 直接拿结构化数据。
 
-## 4. 函数库：bx call
+## 4. 函数库：rsf call
 
 ### 有哪些网站
 
-函数名只是大概，参数、例子和坑以 `bx lib list <域名>` 为准。标 🔑 的要用户在浏览器里登录；（🔑）是登录后更全 / 不容易被限流。
+函数名只是大概，参数、例子和坑以 `rsf lib list <域名>` 为准。标 🔑 的要用户在浏览器里登录；（🔑）是登录后更全 / 不容易被限流。
 
 | 类别 | 域名 | 能取什么 |
 |---|---|---|
@@ -120,19 +120,19 @@ bx read <网址> -s comments --grep AMD # 只在评论区里找
 | AI | `aistudio.google.com` 🔑 | 向 Gemini 提问 |
 
 ```bash
-bx lib list bilibili.com     # 站点笔记 + 每个函数的签名、说明、例子、命令行写法（第一次用某个网站先看这个）
-bx call google.com search "sqlite production" --limit 20 --time year
-bx call google.com news "deno cloudflare" --days 7
-bx call bilibili.com comments BV1GJ411x7h7 --limit 50 -o csv > 评论.csv
-bx call bilibili.com subtitles BV1GJ411x7h7 --text      # 视频内容先看字幕 / summary，比看简介准
-bx call youtube.com transcript dQw4w9WgXcQ --translate zh-Hans --text
-bx call youtube.com videos '@doctorx2023' --limit 200    # PowerShell 里 @ 开头的参数要加引号
-bx call reddit.com comments "https://www.reddit.com/r/xxx/comments/abc/" --limit 300
-bx call eastmoney.com notices 600519 --type finance      # 公告；正文用 notice <id>
-bx call sina.com.cn quote "hf_GC,hf_CL,fx_susdcny,DINIW"  # 纽约金、原油、美元人民币、美元指数
-bx call finance.yahoo.com profile NVDA                   # 公司资料 + 估值 + 分析师目标价
-bx call binance.com top --limit 10                       # 币安成交额前十；coingecko.com top 是市值榜
-bx call gov.cn search 消费 --type state --sort time      # 国务院文件全文搜；正文用 gov.cn article <网址>
+rsf lib list bilibili.com     # 站点笔记 + 每个函数的签名、说明、例子、命令行写法（第一次用某个网站先看这个）
+rsf call google.com search "sqlite production" --limit 20 --time year
+rsf call google.com news "deno cloudflare" --days 7
+rsf call bilibili.com comments BV1GJ411x7h7 --limit 50 -o csv > 评论.csv
+rsf call bilibili.com subtitles BV1GJ411x7h7 --text      # 视频内容先看字幕 / summary，比看简介准
+rsf call youtube.com transcript dQw4w9WgXcQ --translate zh-Hans --text
+rsf call youtube.com videos '@doctorx2023' --limit 200    # PowerShell 里 @ 开头的参数要加引号
+rsf call reddit.com comments "https://www.reddit.com/r/xxx/comments/abc/" --limit 300
+rsf call eastmoney.com notices 600519 --type finance      # 公告；正文用 notice <id>
+rsf call sina.com.cn quote "hf_GC,hf_CL,fx_susdcny,DINIW"  # 纽约金、原油、美元人民币、美元指数
+rsf call finance.yahoo.com profile NVDA                   # 公司资料 + 估值 + 分析师目标价
+rsf call binance.com top --limit 10                       # 币安成交额前十；coingecko.com top 是市值榜
+rsf call gov.cn search 消费 --type state --sort time      # 国务院文件全文搜；正文用 gov.cn article <网址>
 ```
 
 - **搜索引擎**：`google.com search` 自带排队（同一个进程里的搜索一个接一个发，并行写 `Promise.allSettled` 也没事）、被人机验证拦住时等一会儿重试一次，还不行就**自动改用必应、再不行用 DuckDuckGo**（结果里 `engine` 字段标明来源，stderr 会打一行 ⚠），之后 10 分钟内直接走兜底。只要 Google 的结果就传 `--fallback false`；指定兜底顺序用 `--fallback baidu,bing`。`suggest` / `news` / `trends` 走公开接口，不会被拦。
@@ -143,31 +143,31 @@ bx call gov.cn search 消费 --type state --sort time      # 国务院文件全�
 - **管道**：第一个参数写 `-` 就从 stdin 一行一条地读，每条执行一次。JSON 记录默认取它的 `url` 字段（`--field mid` 指定别的字段）；`--concurrency 3` 并发；某条失败只在 stderr 打 `✗`，其余照常。
 
 ```bash
-bx call bilibili.com search 电影解说 --limit 5 | bx call bilibili.com comments - --limit 3
-bx call bilibili.com rank 动画 --limit 5 | bx call bilibili.com user - --field mid
-bx call news.ycombinator.com search "bun in production" -o jsonl | bx call news.ycombinator.com comments - --limit 50
-bx call sina.com.cn search 黄金 --limit 3 | bx call sina.com.cn quote - --field symbol
+rsf call bilibili.com search 电影解说 --limit 5 | rsf call bilibili.com comments - --limit 3
+rsf call bilibili.com rank 动画 --limit 5 | rsf call bilibili.com user - --field mid
+rsf call news.ycombinator.com search "bun in production" -o jsonl | rsf call news.ycombinator.com comments - --limit 50
+rsf call sina.com.cn search 黄金 --limit 3 | rsf call sina.com.cn quote - --field symbol
 ```
-## 5. bx run：写 JS 串起来
+## 5. rsf run：写 JS 串起来
 
 代码在 Node 里执行（ES 模块）：可以用顶层 `await` 和 `import fs from 'node:fs'`，`return` 的值会打印出来。只有一个表达式时可以不写 `return`。
 
 ```bash
-bx run 'await bx.tabs()'
-bx run -f step1.js 0,3,7     # 多出来的参数在 bx.args 里
+rsf run 'await rsf.tabs()'
+rsf run -f step1.js 0,3,7     # 多出来的参数在 rsf.args 里
 ```
 
 ```js
 // 标签
-const tab = await bx.open(url)                 // 后台新开
-const tab = await bx.tab('t5')                 // 按编号拿回之前开的标签（上次 bx run 开的也行）
-const tab = await bx.tab('reddit.com')         // 复用已打开的、网址匹配的标签（带登录状态），没有就后台新开
-await bx.cleanup()                             // 关掉这次运行自己开的标签
+const tab = await rsf.open(url)                 // 后台新开
+const tab = await rsf.tab('t5')                 // 按编号拿回之前开的标签（上次 rsf run 开的也行）
+const tab = await rsf.tab('reddit.com')         // 复用已打开的、网址匹配的标签（带登录状态），没有就后台新开
+await rsf.cleanup()                             // 关掉这次运行自己开的标签
 
 // 取数据
-await bx.read(url, { budget: 4000 })           // → { title, content, … }，读完自动关标签
-await bx.read(url, { grep: /断货|限购/ })        // 只要命中的段落 → .matches = [{ offset, text, hits }]
-await bx.lib('reddit.com').search('x', { limit: 20 })
+await rsf.read(url, { budget: 4000 })           // → { title, content, … }，读完自动关标签
+await rsf.read(url, { grep: /断货|限购/ })        // 只要命中的段落 → .matches = [{ offset, text, hits }]
+await rsf.lib('reddit.com').search('x', { limit: 20 })
 await fetch('https://api.github.com/...')      // 公开接口直接用 Node 的 fetch，不用开标签
 await tab.fetch(url)                           // 在页面里发请求，带着登录状态，返回 JSON
 await tab.eval(() => document.title)           // 在页面里跑 JS（函数会被序列化，用不了外面的变量）
@@ -180,37 +180,37 @@ for await (const res of tab.collect('/api/search', { more: () => tab.scroll() })
 await tab.click(目标)  tab.fill(目标, 文字, { submit: true })  tab.fill({ 目标: 值, … })
 tab.press('Enter')  tab.type(文字)  tab.select(目标, 选项)  tab.upload(目标, 文件)  tab.scroll()
 tab.snapshot({ interactive: true })  tab.find(文字)  tab.waitFor({ text })  tab.waitFor({ url: /issues\/\d+/ })  tab.shot({ save })  tab.close()
-bx.log(...)  bx.sleep(ms)   // 日志走 stderr，不混进结果
+rsf.log(...)  rsf.sleep(ms)   // 日志走 stderr，不混进结果
 ```
 
 - 先试 `tab.fetch`：很多看起来带签名的接口，在页面里带着 cookie 直接请求也能用。不行再用 `collect`。
-- JS 变量在进程退出后就没了：要留的结果写文件；标签留着，下次用 `bx.tab('t5')` 拿回来。
+- JS 变量在进程退出后就没了：要留的结果写文件；标签留着，下次用 `rsf.tab('t5')` 拿回来。
 
 ## 6. 操作页面
 
 目标元素有四种写法，所有点击、填写类命令都接受：
 
 ```bash
-bx click e15 -t t5                                      # snapshot 编号（临时操作用）
-bx click "#main button.submit" -t t5                    # CSS 选择器
-bx click "getByRole('button', { name: '提交' })" -t t5  # 按角色 + 名字（写脚本时推荐）
-bx fill "getByLabel('邮箱')" a@b.com -t t5              # 还有 getByText('下一步')、getByPlaceholder('搜索')
+rsf click e15 -t t5                                      # snapshot 编号（临时操作用）
+rsf click "#main button.submit" -t t5                    # CSS 选择器
+rsf click "getByRole('button', { name: '提交' })" -t t5  # 按角色 + 名字（写脚本时推荐）
+rsf fill "getByLabel('邮箱')" a@b.com -t t5              # 还有 getByText('下一步')、getByPlaceholder('搜索')
 ```
 
 ```bash
-bx snapshot -i -t t5              # 可操作的元素 + 编号；不加 -i 会连文字一起显示
-bx find "加入购物车" -t t5         # 只返回匹配的那几行和编号，比整页 snapshot 省很多
-bx click <目标> -t t5             # --double --right --middle --modifiers Shift --force（被挡住也点）
-bx fill <目标> "内容" --submit -t t5
-bx fill e3=张三 e5=13800000000 e7=true -t t5    # 一次填多个：勾选框填 true/false，下拉框填选项文字
-bx select <目标> 北京 -t t5 / check <目标> / uncheck <目标> / press Enter / type "文字"
-bx upload <目标> ./a.png -t t5    # 目标可以是“点了会弹选文件窗口”的按钮
-bx click <目标> --download --save ./out -t t5   # 等下载完成，返回文件路径
-bx scroll [down|bottom|<目标>] -t t5           # 返回 atBottom
-bx wait --text 加载完成 -t t5     # 还有 --gone / --selector / --url / --fn / --idle
-bx wait --url '/issues\/\d+/' -t t5   # --url：子串 /issues/、通配 '*github.com/*/issues/*'、斜杠包起来的正则（net log / collect 的匹配也一样）
-bx mouse click 320 240 -t t5      # canvas、地图这类：坐标从 bx shot --marks 的截图上看
-bx shot --marks -t t5             # 截图，在图上标出编号
+rsf snapshot -i -t t5              # 可操作的元素 + 编号；不加 -i 会连文字一起显示
+rsf find "加入购物车" -t t5         # 只返回匹配的那几行和编号，比整页 snapshot 省很多
+rsf click <目标> -t t5             # --double --right --middle --modifiers Shift --force（被挡住也点）
+rsf fill <目标> "内容" --submit -t t5
+rsf fill e3=张三 e5=13800000000 e7=true -t t5    # 一次填多个：勾选框填 true/false，下拉框填选项文字
+rsf select <目标> 北京 -t t5 / check <目标> / uncheck <目标> / press Enter / type "文字"
+rsf upload <目标> ./a.png -t t5    # 目标可以是“点了会弹选文件窗口”的按钮
+rsf click <目标> --download --save ./out -t t5   # 等下载完成，返回文件路径
+rsf scroll [down|bottom|<目标>] -t t5           # 返回 atBottom
+rsf wait --text 加载完成 -t t5     # 还有 --gone / --selector / --url / --fn / --idle
+rsf wait --url '/issues\/\d+/' -t t5   # --url：子串 /issues/、通配 '*github.com/*/issues/*'、斜杠包起来的正则（net log / collect 的匹配也一样）
+rsf mouse click 320 240 -t t5      # canvas、地图这类：坐标从 rsf shot --marks 的截图上看
+rsf shot --marks -t t5             # 截图，在图上标出编号
 ```
 
 - 每次操作都返回 `changes`：`navigated`（页面跳转了，编号作废，要重新 snapshot）、`newTabs`（开了新标签，在后台，用 `-t <新编号>` 操作它）、`dialogs`（弹窗已自动确认）、`note`。
@@ -219,61 +219,61 @@ bx shot --marks -t t5             # 截图，在图上标出编号
 
 ## 7. 跨站检索的最佳实践
 
-跨几个网站调研一个问题（“X 能不能用于生产环境”“大家怎么评价 Y”“Z 方案现在什么状况”）时，**不要一个网站一个网站地手动 `read`**。按下面的步骤做，每一步是一次 `bx run`：
+跨几个网站调研一个问题（“X 能不能用于生产环境”“大家怎么评价 Y”“Z 方案现在什么状况”）时，**不要一个网站一个网站地手动 `read`**。按下面的步骤做，每一步是一次 `rsf run`：
 
 1. **广撒网**：几个站并行搜索。中英文网站各用对应语言的关键词。把结果规整成同一种结构 `{ site, title, url, heat, time }`，写进 `research/posts.json`。只返回“每个来源成功/失败 + 一行一条、带序号的摘要”。
-2. **挑着深挖**：看摘要按标题挑出真正相关的几条（搜索结果里总会混进跑题的帖子）。用序号作参数，拉评论或正文，写进 `research/threads.json`。文章拆成段落，关心特定问题时在脚本顶部设 `KEY`（正则），文章用 `bx.read(url, { grep })` 只取命中段落、评论也按它过滤。
-3. **一手资料**：官方文档用 `bx.read`，项目数据用公开接口（GitHub API 等）。
+2. **挑着深挖**：看摘要按标题挑出真正相关的几条（搜索结果里总会混进跑题的帖子）。用序号作参数，拉评论或正文，写进 `research/threads.json`。文章拆成段落，关心特定问题时在脚本顶部设 `KEY`（正则），文章用 `rsf.read(url, { grep })` 只取命中段落、评论也按它过滤。
+3. **一手资料**：官方文档用 `rsf.read`，项目数据用公开接口（GitHub API 等）。
 4. **写结论**：每个说法后面带来源链接；分清是谁的经验、哪篇文章、官方怎么写的；矛盾的说法都列出来，写清楚各自的前提。
-5. **存下来**：现场摸通的网站写成 `~/.bx/lib/<域名>.js` 里的函数，下次直接用（见第 8 节）。
+5. **存下来**：现场摸通的网站写成 `~/.rsf/lib/<域名>.js` 里的函数，下次直接用（见第 8 节）。
 
 几个要点：
 
 - 用 `Promise.allSettled` 并行。一个站失败（`NEED_LOGIN` / `BLOCKED`）不影响其它站，把失败原因报出来就行。多个 Google 查询也可以并行写（函数库里会排队、被拦会自动换引擎）；中文问题可以加一路 `baidu.com`。
-- PowerShell 里序号参数要加引号：`bx run -f step2.js "0,31,60"`（不加会被拆成数组）。
+- PowerShell 里序号参数要加引号：`rsf run -f step2.js "0,31,60"`（不加会被拆成数组）。
 - 保留各站自己的相关度顺序，不要按评论数排序（会把跑题的热帖排到前面）。
-- 拉详情时限制并发（同时 3 个左右），结束时 `await bx.cleanup()`。
+- 拉详情时限制并发（同时 3 个左右），结束时 `await rsf.cleanup()`。
 - 中间结果都写文件，所以每一步都可以单独重跑。
 
 **可以直接复制的脚本**：本 skill 目录下的 `examples/cross-site-research/`（`step1.js` 搜索汇总、`step2.js` 拉详情、`step3.js` 一手资料，`README.md` 是说明）。三个脚本都在真实浏览器里跑通过（HN + Reddit + B 站 + Google）。复制到工作目录，改脚本顶部的关键词就能用：
 
 ```bash
-bx run -f step1.js              # → 来源状态 + 带序号的摘要
-bx run -f step2.js 0,31,60,80   # → 挑中的几条的评论 / 正文
-bx run -f step3.js
+rsf run -f step1.js              # → 来源状态 + 带序号的摘要
+rsf run -f step2.js 0,31,60,80   # → 挑中的几条的评论 / 正文
+rsf run -f step3.js
 ```
 
 ## 8. 把摸通的网站存成函数库
 
 ```
-第一次遇到 → bx read <网址> 看一眼
-不够用     → bx run 里试：tab.eval 看页面数据、bx net log --api -t t5 找接口、tab.fetch 调一下
-试通了     → 改成函数，存进 ~/.bx/lib/<域名>.js
-写完 / 修完 → bx lib test <域名> [函数]，把 @example 真跑一遍验证
+第一次遇到 → rsf read <网址> 看一眼
+不够用     → rsf run 里试：tab.eval 看页面数据、rsf net log --api -t t5 找接口、tab.fetch 调一下
+试通了     → 改成函数，存进 ~/.rsf/lib/<域名>.js
+写完 / 修完 → rsf lib test <域名> [函数]，把 @example 真跑一遍验证
 ```
 
 ```js
-// ~/.bx/lib/example.com.js
-/* 站点笔记：接口在哪、字段什么意思、有什么坑（bx lib list 时显示；下次来修先看它）
+// ~/.rsf/lib/example.com.js
+/* 站点笔记：接口在哪、字段什么意思、有什么坑（rsf lib list 时显示；下次来修先看它）
  * @login required 没登录会怎样（required 必须登录 / optional 登录更好 / 不写就是不用登录；函数说明里也能写，覆盖这里） */
 
 /** 一行说明
  *  @example search('关键词', { limit: 20 }) */
 export async function search(q, { limit = 20 } = {}) {
-  const tab = await bx.tab('example.com')
+  const tab = await rsf.tab('example.com')
   const j = await tab.fetch(`https://example.com/api/search?q=${encodeURIComponent(q)}`)
-  if (!Array.isArray(j.items)) throw new BxError('CHANGED', '搜索接口的返回结构变了', '去修 search')
-  if (!j.items.length) throw new BxError('EMPTY', `没有搜到 ${q}`, '换个关键词')
+  if (!Array.isArray(j.items)) throw new RsfError('CHANGED', '搜索接口的返回结构变了', '去修 search')
+  if (!j.items.length) throw new RsfError('EMPTY', `没有搜到 ${q}`, '换个关键词')
   return j.items.slice(0, limit).map(x => ({ title: x.title, url: x.url }))   // 返回数组，每项带 url
 }
 
-/** 可选：有这个函数时 bx read 会优先用它；处理不了的页面返回 null */
+/** 可选：有这个函数时 rsf read 会优先用它；处理不了的页面返回 null */
 export async function read(tab) { … }
 ```
 
-- 参数类型看默认值（`limit = 20` 是数字，`full = false` 是开关），不用另外声明；全局有 `bx` 和 `BxError`，不用 import。
+- 参数类型看默认值（`limit = 20` 是数字，`full = false` 是开关），不用另外声明；全局有 `rsf` 和 `RsfError`，不用 import。
 - 标了 `@login` 的函数要自己认出“没登录”（返回 200 但 JSON 里带错误码、跳到登录页、只给前几条）并抛 `NEED_LOGIN`，框架只认得 401 / 403。
-- `@example` 会被 `bx lib test` 真的执行：要写真实、能跑通的参数；需要文件就加 `@test file 文件名 内容`，不能自动跑（发帖、删东西）就加 `@test skip 原因`。`bx lib test` 只有“真坏了”才算失败，要登录 / 被拦 / 例子过期单独列出。
+- `@example` 会被 `rsf lib test` 真的执行：要写真实、能跑通的参数；需要文件就加 `@test file 文件名 内容`，不能自动跑（发帖、删东西）就加 `@test skip 原因`。`rsf lib test` 只有“真坏了”才算失败，要登录 / 被拦 / 例子过期单独列出。
 - 函数库里定位元素用 CSS 或 `getByRole(...)`，不要用编号（页面一变编号就变）；自己开的标签在 `finally` 里关掉。
 - 动手之前先看看 [OpenCLI](https://github.com/jackwener/opencli) 的 `clis/<站点>/` 有没有现成实现：它的 `page.goto` / `page.evaluate` 对应 `tab.goto` / `tab.eval`。
-- 详细写法见仓库里的 `docs/lib.md`。想录下一次操作、自动分析数据来自哪个接口：`bx trace start --goal "…"` … `bx trace stop`，见 `docs/trace.md`。
+- 详细写法见仓库里的 `docs/lib.md`。想录下一次操作、自动分析数据来自哪个接口：`rsf trace start --goal "…"` … `rsf trace stop`，见 `docs/trace.md`。

@@ -1,11 +1,11 @@
 import readline from 'node:readline'
-import { BxError } from '../common/util.ts'
-import { createBx } from '../sdk/index.ts'
+import { RsfError } from '../common/util.ts'
+import { createRsf } from '../sdk/index.ts'
 import { cliUsage, describeLib, findLib, fnLogin, importLib, libInfo, listLibs, type LibFn, type LibInfo, type LibParam } from '../sdk/lib.ts'
 import { render, type Format } from './output.ts'
 
 /**
- * bx call <域名> <函数> [参数...] [--选项 值]
+ * rsf call <域名> <函数> [参数...] [--选项 值]
  *   位置参数按顺序传给函数；--limit 20 这类合成最后一个对象参数。类型看函数签名里的默认值。
  *   第一个参数写 - 就从 stdin 一行一条地读，结果输出 JSONL；读进来的是 JSON 记录时，默认取它的 url 字段。
  */
@@ -15,13 +15,13 @@ const RESERVED = new Set(['output', 'tab', 'browser', 'field', 'concurrency', 'h
 function convert(v: string, type: LibParam['type'], name: string) {
   if (type === 'number') {
     const n = Number(v)
-    if (v === '' || Number.isNaN(n)) throw new BxError('BAD_ARGS', `${name} 需要数字，收到 ${JSON.stringify(v)}`)
+    if (v === '' || Number.isNaN(n)) throw new RsfError('BAD_ARGS', `${name} 需要数字，收到 ${JSON.stringify(v)}`)
     return n
   }
   if (type === 'boolean') {
     if (/^(true|1|yes|on)$/i.test(v)) return true
     if (/^(false|0|no|off)$/i.test(v)) return false
-    throw new BxError('BAD_ARGS', `${name} 需要 true / false`)
+    throw new RsfError('BAD_ARGS', `${name} 需要 true / false`)
   }
   if (type === 'any') {
     if (/^-?\d+(\.\d+)?$/.test(v)) return Number(v)
@@ -49,7 +49,7 @@ function parseCallArgs(argv: string[], f: LibFn | undefined): Parsed {
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
     const next = () => {
-      if (argv[i + 1] === undefined) throw new BxError('BAD_ARGS', `${a} 后面要跟一个值`)
+      if (argv[i + 1] === undefined) throw new RsfError('BAD_ARGS', `${a} 后面要跟一个值`)
       return argv[++i]
     }
     if (a === '--') {
@@ -107,11 +107,11 @@ function bindArgs(info: LibInfo, f: LibFn, pos: any[], opts: Record<string, any>
       const v = pos[k++]
       args[i] = typeof v === 'string' ? convert(v, p.type, `<${p.name}>`) : v
     } else if (p.default === undefined && (optIdx < 0 || i < optIdx)) {
-      throw new BxError('BAD_ARGS', `缺少参数 <${p.name}>`, `用法：${cliUsage(info.domain, f)}`)
+      throw new RsfError('BAD_ARGS', `缺少参数 <${p.name}>`, `用法：${cliUsage(info.domain, f)}`)
     }
   }
-  if (k < pos.length) throw new BxError('BAD_ARGS', `参数多了：${pos.slice(k).join(' ')}`, `用法：${cliUsage(info.domain, f)}`)
-  if (optIdx < 0 && Object.keys(opts).length) throw new BxError('BAD_ARGS', `${f.name} 没有选项参数：--${Object.keys(opts).join(' --')}`, `用法：${cliUsage(info.domain, f)}`)
+  if (k < pos.length) throw new RsfError('BAD_ARGS', `参数多了：${pos.slice(k).join(' ')}`, `用法：${cliUsage(info.domain, f)}`)
+  if (optIdx < 0 && Object.keys(opts).length) throw new RsfError('BAD_ARGS', `${f.name} 没有选项参数：--${Object.keys(opts).join(' --')}`, `用法：${cliUsage(info.domain, f)}`)
   // 去掉末尾的 undefined，让默认值生效
   while (args.length && args[args.length - 1] === undefined) args.pop()
   return args
@@ -141,22 +141,22 @@ function pickKey(rec: any, keys: string[]) {
     const v = k.split('.').reduce((o, p) => (o == null ? o : o[p]), rec)
     if (v !== undefined && v !== null && v !== '') return v
   }
-  throw new BxError('NO_FIELD', `管道输入的记录里没有字段 ${keys.join(' / ')}：${JSON.stringify(rec).slice(0, 200)}`, '用 --field <字段名> 指定取哪个字段')
+  throw new RsfError('NO_FIELD', `管道输入的记录里没有字段 ${keys.join(' / ')}：${JSON.stringify(rec).slice(0, 200)}`, '用 --field <字段名> 指定取哪个字段')
 }
 
 export async function runCall(argv: string[]) {
   const domain = argv[0]
   if (!domain || domain.startsWith('-')) {
-    console.log('用法：bx call <域名> <函数> [参数...] [--选项 值]\n\n有哪些函数：bx lib list [域名]')
+    console.log('用法：rsf call <域名> <函数> [参数...] [--选项 值]\n\n有哪些函数：rsf lib list [域名]')
     return
   }
   const entry = findLib(domain)
-  if (!entry) throw new BxError('NO_LIB', `没有 ${domain} 的函数库`, `已有：${listLibs().map(l => l.domain).join(', ') || '(无)'}；新写一个放到 ~/.bx/lib/${domain}.js`)
+  if (!entry) throw new RsfError('NO_LIB', `没有 ${domain} 的函数库`, `已有：${listLibs().map(l => l.domain).join(', ') || '(无)'}；新写一个放到 ~/.rsf/lib/${domain}.js`)
   const info = libInfo(entry)
   const fnName = argv[1]
   if (!fnName || fnName.startsWith('-')) return console.log(describeLib(info))
   const f = info.functions.find(x => x.name === fnName)
-  if (!f) throw new BxError('NO_FUNCTION', `${info.domain} 的函数库里没有 ${fnName}`, `有：${info.functions.map(x => x.name).join(', ')}；看用法：bx lib list ${info.domain}`)
+  if (!f) throw new RsfError('NO_FUNCTION', `${info.domain} 的函数库里没有 ${fnName}`, `有：${info.functions.map(x => x.name).join(', ')}；看用法：rsf lib list ${info.domain}`)
   const a = parseCallArgs(argv.slice(2), f)
   if (a.own.help) {
     const L = [cliUsage(info.domain, f), '', f.signature]
@@ -167,17 +167,17 @@ export async function runCall(argv: string[]) {
     return console.log(L.join('\n'))
   }
   const declared = new Set((f.params.find(p => p.options)?.options || []).map(o => o.name))
-  for (const k of Object.keys(a.opts)) if (RESERVED.has(k) && !declared.has(k)) throw new BxError('BAD_ARGS', `--${k} 是 bx call 自己的选项`)
+  for (const k of Object.keys(a.opts)) if (RESERVED.has(k) && !declared.has(k)) throw new RsfError('BAD_ARGS', `--${k} 是 rsf call 自己的选项`)
 
-  const bx = createBx({ tab: a.own.tab || process.env.BX_TAB, browser: a.own.browser })
-  ;(globalThis as any).bx = bx
-  ;(globalThis as any).BxError = BxError
+  const rsf = createRsf({ tab: a.own.tab || process.env.RSF_TAB, browser: a.own.browser })
+  ;(globalThis as any).rsf = rsf
+  ;(globalThis as any).RsfError = RsfError
   const mod = await importLib(entry)
   const fn = mod[f.name]
-  if (typeof fn !== 'function') throw new BxError('NO_FUNCTION', `${entry.file} 没有导出函数 ${f.name}`)
+  if (typeof fn !== 'function') throw new RsfError('NO_FUNCTION', `${entry.file} 没有导出函数 ${f.name}`)
 
   const fromStdin = a.pos[0] === '-'
-  const fmt: Format = a.own.output || (process.env.BX_FORMAT as Format) || (fromStdin || !process.stdout.isTTY ? 'jsonl' : 'text')
+  const fmt: Format = a.own.output || (process.env.RSF_FORMAT as Format) || (fromStdin || !process.stdout.isTTY ? 'jsonl' : 'text')
   const stream = fmt === 'jsonl'
   const collected: any[] = []
   let emitted = 0
@@ -227,7 +227,7 @@ export async function runCall(argv: string[]) {
     } else await runOnce(a.pos)
   } finally {
     for (const [k, c] of undef) if (c === emitted && emitted > 1) process.stderr.write(`⚠ 字段 ${k} 在全部 ${c} 条记录里都是 undefined（字段路径写错了？）\n`)
-    bx.close()
+    rsf.close()
   }
   if (!stream) {
     const out = collected.length === 1 && fmt !== 'csv' && fmt !== 'table' ? collected[0] : collected
@@ -236,11 +236,11 @@ export async function runCall(argv: string[]) {
   }
 }
 
-/** bx lib list [域名] */
+/** rsf lib list [域名] */
 export function libList(domain: string | undefined, fmt: Format) {
   if (domain) {
     const entry = findLib(domain)
-    if (!entry) throw new BxError('NO_LIB', `没有 ${domain} 的函数库`, `已有：${listLibs().map(l => l.domain).join(', ') || '(无)'}`)
+    if (!entry) throw new RsfError('NO_LIB', `没有 ${domain} 的函数库`, `已有：${listLibs().map(l => l.domain).join(', ') || '(无)'}`)
     const info = libInfo(entry)
     return fmt === 'text' ? describeLib(info) : info
   }
@@ -262,7 +262,7 @@ export function libList(domain: string | undefined, fmt: Format) {
     }
   })
   if (fmt !== 'text') return libs
-  if (!libs.length) return '还没有函数库。写法见仓库 docs/lib.md，放到 ~/.bx/lib/<域名>.js'
+  if (!libs.length) return '还没有函数库。写法见仓库 docs/lib.md，放到 ~/.rsf/lib/<域名>.js'
   const w = Math.max(...libs.map(l => l.domain.length)) + 2
   const tag: Record<string, string> = { required: '[要登录]  ', optional: '[登录更好]', none: '          ' }
   const mark: Record<string, string> = { required: '（要登录）', optional: '（登录更好）', none: '（不用登录）' }
@@ -273,7 +273,7 @@ export function libList(domain: string | undefined, fmt: Format) {
     ),
     '',
     '[要登录] 没登录会报 NEED_LOGIN；[登录更好] 不登录也能用但会受限。调研前可以先请用户在浏览器里登录这些网站',
-    '详细用法（签名、说明、例子、站点笔记）：bx lib list <域名>',
+    '详细用法（签名、说明、例子、站点笔记）：rsf lib list <域名>',
   ].join('\n')
 }
 
