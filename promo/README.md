@@ -1,4 +1,4 @@
-# BrowserX 宣传片（HTML 版）
+# Recursurf 宣传片（HTML 版）
 
 双击 `index.html` 用 Chrome / Edge 打开就能播放，不用起服务器。想发给别人就用 `index-single.html`（CSS / JS / 旁白全打包在一个文件里，约 3.4 MB）。1920×1080，全长约 4 分 30 秒。
 
@@ -6,11 +6,11 @@
 
 1. **痛点开场**：让 AI 查「昨晚发布的 xxx模型口碑怎么样」，它在 X、知乎、Reddit 处处碰壁，上下文被 HTML 撑爆，最后只能说“无法访问”。可这些网站你的浏览器全都登录着 → Logo。
 2. **再问一次**：同一句话，借你的浏览器查 6 个网站，只给结果（带出处的报告）；再切换显示技术排查 / 新闻舆情 / 股票异动三个例子。
-3. 原理 → bx read → 函数库。
+3. 原理 → rsf read → 函数库。
 4. **亲手操作**：照着 `release/v2.4` 文件夹里的资料，填三家应用市场的上架表单（tab list → snapshot → fill / upload → 同名候选 → changes → 向导跳转后编号作废），全程 trace 录下来，AI 写成 `publish.js`，下次发版一条命令。
-5. 管道 + bx run → 把第 2 段的调研慢放一遍 → 越用越熟 → 结尾。
+5. 管道 + rsf run → 把第 2 段的调研慢放一遍 → 越用越熟 → 结尾。
 
-xxx模型、三家应用市场、蒙太奇里的例子都是虚构的；bx 的输出格式（snapshot、AMBIGUOUS、changes、STALE_REF、trace 报告）照真实运行的样子写。
+xxx模型、三家应用市场、蒙太奇里的例子都是虚构的；rsf 的输出格式（snapshot、AMBIGUOUS、changes、STALE_REF、trace 报告）照真实运行的样子写。
 
 ## 快捷键
 
@@ -39,7 +39,7 @@ js/scenes.js   分镜：11 个章节，时间轴以旁白时长为骨架
 js/main.js     主循环、字幕、进度条、快捷键
 tts/           旁白脚本 script.json + 生成脚本 gen.py（本地 audio.cpp · Fish Audio S2 Pro，克隆 manbo_ref.wav）
 build_single.ps1  把上面这些打成单文件 index-single.html（改完源文件重跑一次）
-shot.ps1       用 bx 截静帧：.\shot.ps1 -times "12,30.5" -tab t23（标签先开好 index.html）
+shot.ps1       用 rsf 截静帧：.\shot.ps1 -times "12,30.5" -tab t23（标签先开好 index.html）
 ```
 
 ## 改旁白

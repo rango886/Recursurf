@@ -13,7 +13,7 @@
 | 3 | p3 | 好不容易打开一页，几十万字符的 HTML 灌进来，上下文当场爆掉。 | 同左 | When a page finally opens, hundreds of thousands of characters of HTML pour in — and the context blows up. |
 | 4 | p4 | 最后它只能说：“抱歉，我无法访问这些网站。” | 最后它只能说，抱歉，我无法访问这些网站。 | In the end, all it can say is: "Sorry, I can't access these sites." |
 | 5 | p5 | 可这些网站，你的浏览器里，全都登录着。 | 同左 | Yet your own browser is logged in to every one of them. |
-| 6 | logo1 | BrowserX —— 让 AI agent 借你的浏览器上网。 | BrowserX。让 AI agent，借你的浏览器上网。 | BrowserX — let your AI agent browse the web through your own browser. |
+| 6 | logo1 | Recursurf —— 让 AI agent 借你的浏览器上网。 | Recursurf。让 AI agent，借你的浏览器上网。 | Recursurf — let your AI agent browse the web through your own browser. |
 
 ## 同一句话，再问一次（只给结果）
 
@@ -27,17 +27,17 @@
 
 | # | id | 中文字幕 | 朗读稿 | English |
 |---|---|---|---|---|
-| 10 | a1 | BrowserX 的办法很直接：不另起一个浏览器，借你平时用的那个。 | 同左 | BrowserX's answer is simple: don't spin up another browser — borrow the one you already use. |
-| 11 | a2 | 比如 AI 想读一条知乎回答，只要敲一条 bx 命令。 | 同左 | Say the AI wants to read a Zhihu answer. It just types one bx command. |
+| 10 | a1 | Recursurf 的办法很直接：不另起一个浏览器，借你平时用的那个。 | 同左 | Recursurf's answer is simple: don't spin up another browser — borrow the one you already use. |
+| 11 | a2 | 比如 AI 想读一条知乎回答，只要敲一条 rsf 命令。 | 同左 | Say the AI wants to read a Zhihu answer. It just types one rsf command. |
 | 12 | a3 | 命令交给后台常驻的 daemon，它通过浏览器插件，在你的浏览器里开个标签。 | 命令交给后台常驻的 daemon，它通过浏览器插件，在你的浏览器里，开个标签。 | The command goes to a background daemon, which — through a browser extension — opens a tab in your browser. |
 | 13 | a4 | 几十万字符的页面，变成几行精简的文字，回到 AI 手里。 | 同左 | A page of hundreds of thousands of characters comes back to the AI as a few compact lines. |
 | 14 | a5 | 登录用的是你的，所以对网站来说，来的就是你本人。 | 同左 | It's your login — so to the website, it's simply you. |
 
-## bx read
+## rsf read
 
 | # | id | 中文字幕 | 朗读稿 | English |
 |---|---|---|---|---|
-| 15 | r1 | 先看最常用的 bx read：一个网页，讲了什么。 | 先看最常用的，bx read。一个网页，讲了什么。 | Start with the everyday tool, bx read: what is this page about? |
+| 15 | r1 | 先看最常用的 rsf read：一个网页，讲了什么。 | 先看最常用的，rsf read。一个网页，讲了什么。 | Start with the everyday tool, rsf read: what is this page about? |
 | 16 | r2 | 一个 B 站视频页，原始 HTML 有二十三万字符。 | 同左 | A Bilibili video page: 230,000 characters of raw HTML. |
 | 17 | r3 | read 之后，只剩两千字，该有的一样不少。 | 同左 | After read: about 2,000. Everything that matters is still there. |
 | 18 | r4 | 标题、作者、播放数据，评论有多少条、怎么展开，一眼就清楚。 | 同左 | Title, author, stats, how many comments and how to expand them — all at a glance. |
@@ -60,8 +60,8 @@
 |---|---|---|---|---|
 | 26 | f0 | 有些活没有接口，只能一页页去填。比如新版本上架：三家应用市场，三套不一样的表单。 | 同左 | Some jobs have no API — just forms. Like shipping a new version: three app stores, three different forms. |
 | 27 | f1 | 要填的资料散在文件夹里：版本号、更新说明、软著编号、隐私政策，还有一堆截图。 | 同左 | The details are scattered across a folder: version, release notes, copyright number, privacy policy, and a pile of screenshots. |
-| 28 | f2 | AI 先把文件读一遍，再用 bx tab list，找到你开着的三个后台。 | 同左 | The AI reads the files, then uses bx tab list to find the three consoles you have open. |
-| 29 | f3 | bx snapshot 看一眼页面：每个输入框都带编号，哪些必填，一目了然。 | 同左 | One bx snapshot: every field gets a number, and the required ones are obvious. |
+| 28 | f2 | AI 先把文件读一遍，再用 rsf tab list，找到你开着的三个后台。 | 同左 | The AI reads the files, then uses rsf tab list to find the three consoles you have open. |
+| 29 | f3 | rsf snapshot 看一眼页面：每个输入框都带编号，哪些必填，一目了然。 | 同左 | One rsf snapshot: every field gets a number, and the required ones are obvious. |
 | 30 | f4 | 一条 fill 填完一整页，截图用 upload 直接传上去。 | 同左 | One fill completes the whole page; upload sends the screenshots straight in. |
 | 31 | f5 | 按名字点“提交审核”？页面上有两个。它不瞎猜，把候选列出来。 | 按名字点提交审核？页面上有两个。它不瞎猜，把候选列出来。 | Click "Submit for review" by name? There are two. It won't guess — it lists the candidates. |
 | 32 | f6 | 换成编号点，返回值直接告诉它：弹了确认框，页面也跳走了。 | 同左 | Click by number, and the result says it all: a confirm dialog popped, and the page moved on. |
@@ -70,13 +70,13 @@
 | 35 | f9 | 整个过程，trace 都录了下来：点了哪、填了什么、最后提交给了哪个接口。 | 同左 | trace records the whole run: what was clicked, what was filled, and which API it was finally submitted to. |
 | 36 | f10 | AI 照着录制写成脚本。下次发版，一条命令，三家一起填完。 | 同左 | The AI turns the recording into a script. Next release: one command, all three stores done. |
 
-## 组合：管道 + bx run
+## 组合：管道 + rsf run
 
 | # | id | 中文字幕 | 朗读稿 | English |
 |---|---|---|---|---|
 | 37 | c1 | 函数和函数之间，可以用管道拼起来。 | 同左 | Functions snap together with pipes. |
 | 38 | c2 | B 站搜到的视频一行一条，流进下一个函数，评论就出来了。 | 同左 | Bilibili search results flow line by line into the next function — and out come the comments. |
-| 39 | c3 | 再往上一层，用 bx run 写几行 JS，把好几个网站自由组合。 | 再往上一层，用 bx run 写几行 JavaScript，把好几个网站自由组合。 | One level up, a few lines of JS in bx run combine as many sites as you like. |
+| 39 | c3 | 再往上一层，用 rsf run 写几行 JS，把好几个网站自由组合。 | 再往上一层，用 rsf run 写几行 JavaScript，把好几个网站自由组合。 | One level up, a few lines of JS in rsf run combine as many sites as you like. |
 
 ## 跨站调研：把开头那件事慢放一遍
 
@@ -100,6 +100,6 @@
 
 | # | id | 中文字幕 | 朗读稿 | English |
 |---|---|---|---|---|
-| 48 | o1 | BrowserX —— 给 AI 一双能上网的手。 | BrowserX。给 AI，一双能上网的手。 | BrowserX — give your AI hands for the web. |
+| 48 | o1 | Recursurf —— 给 AI 一双能上网的手。 | Recursurf。给 AI，一双能上网的手。 | Recursurf — give your AI hands for the web. |
 
 共 48 句。

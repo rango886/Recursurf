@@ -1,8 +1,8 @@
-// 素材：bx read / grep / 函数库 / 表单操作的输出格式来自真实运行的 bx；xxx模型、应用市场等案例内容是虚构的
+// 素材：rsf read / grep / 函数库 / 表单操作的输出格式来自真实运行的 rsf；xxx模型、应用市场等案例内容是虚构的
 // 标记语法：«颜色:文字»   颜色 g绿 G亮绿 a琥珀 c青 r红 w白 d暗 y黄 m品红
 window.D = {}
 
-D.biliCmd = 'bx read https://www.bilibili.com/video/BV1GJ411x7h7 -b'
+D.biliCmd = 'rsf read https://www.bilibili.com/video/BV1GJ411x7h7 -b'
 D.biliOut = [
   '«w:# 【官方 MV】Never Gonna Give You Up - Rick Astley»',
   '«c:https://www.bilibili.com/video/BV1GJ411x7h7/»',
@@ -15,11 +15,11 @@ D.biliOut = [
   '  stat: 播放 107145243 · 点赞 2951744 · 投币 1282325 · 收藏 1552657 · 评论 237317',
   '  tags: Never Gonna Give You Up / Rick Astley / 流行音乐 / 欧美音乐 / MV',
   '',
-  '«y:分段（bx read --section <id>）：»',
+  '«y:分段（rsf read --section <id>）：»',
   '  - «G:comments»: 评论（237317 条，按热度）«d:（按需加载）»',
   '  - «G:related»: 相关推荐（40 个）',
   '',
-  '«a:这个网站有函数库 bilibili.com»«d:（bx call bilibili.com <函数> [参数]；详细用法 bx lib list bilibili.com）：»',
+  '«a:这个网站有函数库 bilibili.com»«d:（rsf call bilibili.com <函数> [参数]；详细用法 rsf lib list bilibili.com）：»',
   '  «G:search»(keyword, { limit = 20, type = \'video\', order = \'totalrank\' } = {})  «d:— 搜索视频»',
   '  «G:rank»(category = \'全部\', { limit = 100 } = {})  «d:— 热门排行榜（按分区）»',
   '  «G:video»(id)  «d:— 视频详细信息（播放、点赞、分P、简介…）»',
@@ -34,14 +34,14 @@ D.biliOut = [
 
 D.htmlSoup = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="spm_prefix" content="333.788"><script>window.__INITIAL_STATE__={"aid":80433022,"bvid":"BV1GJ411x7h7","p":1,"episode":"","videoData":{"bvid":"BV1GJ411x7h7","aid":80433022,"videos":1,"tid":193,"tname":"MV","copyright":1,"pic":"http://i0.hdslb.com/bfs/archive/...","title":"【官方 MV】Never Gonna Give You Up - Rick Astley","pubdate":1577807020,"ctime":1577807020,"desc":"","state":0,"duration":213,"rights":{"bp":0,"elec":0,"download":1,"movie":0,"pay":0,"hd5":1,"no_reprint":1,"autoplay":1}}</script><link rel="stylesheet" href="//s1.hdslb.com/bfs/static/jinkela/video/css/video.0.d6d5a4d.css"><div id="app"><div class="video-container-v1"><div class="left-container scroll-sticky"><div class="video-info-container"><h1 title="【官方 MV】Never Gonna Give You Up" class="video-title special-text-indent" data-title="..." data-v-4f1c0915><div class="video-info-detail-list"><div class="item"><svg class="view-icon" viewBox="0 0 24 24" width="24" height="24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5z" fill="currentColor"></path></svg><span class="view-text">10714.5万</span></div><div class="bili-video-card__wrap __scale-wrap"><a href="//www.bilibili.com/video/BV1xx411c7mD" target="_blank" data-spmid="333.788" data-mod="related"><div class="bili-video-card__image--wrap"><picture class="v-img bili-video-card__cover"><source srcset="//i1.hdslb.com/bfs/archive/a1b2.jpg@672w_378h_1c_!web-video-rcmd-cover.avif" type="image/avif"><img src="//i1.hdslb.com/bfs/archive/a1b2.jpg@672w_378h_1c" loading="lazy"></picture></div></a></div><script type="text/javascript">!function(){var e=document.createElement("script");e.src="//s1.hdslb.com/bfs/seed/log/report/log-reporter.js";document.head.appendChild(e)}();</script>`
 
-D.grepCmd = "bx read https://36kr.com/p/2961530218 --grep '思考模式|测试集' -C 0"
+D.grepCmd = "rsf read https://36kr.com/p/2961530218 --grep '思考模式|测试集' -C 0"
 D.grepOut = [
   '«w:# 万字解读 xxx模型 技术报告：跑分之外的五个细节»',
   '«c:https://36kr.com/p/2961530218»',
   '«d:type: article · via: readability · author: 硅基观察»',
   '',
   '«y:grep: 思考模式|测试集 · 命中 7 处，分 4 块 · 共 18342 字»',
-  '«d:（〔@数字〕是这一块在全文里的位置，bx read --offset 数字 从那里接着读）»',
+  '«d:（〔@数字〕是这一块在全文里的位置，rsf read --offset 数字 从那里接着读）»',
   '',
   '«a:〔@1260〕» 报告开篇给出的综合成绩，脚注里写明：所有分数都是在«r:思考模式»下测得的。',
   '«d:⋯»',
@@ -72,7 +72,7 @@ D.libCode = [
   '    }',
   '    offset = d.cursor?.pagination_reply?.next_offset',
   '    «m:if» (!offset || d.cursor?.is_end) «m:break»',
-  '    «m:await» bx.sleep(300)   «d:// 翻页之间停 300ms，不然会被风控»',
+  '    «m:await» rsf.sleep(300)   «d:// 翻页之间停 300ms，不然会被风控»',
   '  }',
   '  «m:return» out',
   '}',
@@ -91,7 +91,7 @@ D.siteNotes = [
 ]
 
 D.libTest = [
-  '«G:$» bx lib test bilibili.com comments',
+  '«G:$» rsf lib test bilibili.com comments',
   '«a:bilibili.com»',
   '  «G:✓» comments(\'BV1GJ411x7h7\', { limit: 20 })  «d:0.5s»  20 项，字段：bvid rpid user mid text like replies time',
   '«d:共 1 条：»«G:✓ 1»',
@@ -232,8 +232,8 @@ D.montage = [
   ] },
 ]
 
-// 原理：bx read 一条知乎回答
-D.archCmd = 'bx read zhihu.com/question/7203316845 -b'
+// 原理：rsf read 一条知乎回答
+D.archCmd = 'rsf read zhihu.com/question/7203316845 -b'
 D.archOut = [
   '«w:# 如何评价昨晚发布的 xxx模型？»',
   '«d:type: qa · 86 个回答 · 1.2 万关注»',
@@ -256,7 +256,7 @@ D.archPage = [
 ]
 
 // =====================================================================
-// 亲手操作：照着文件夹里的资料，填三家应用市场的上架表单（虚构站点，输出格式来自真实运行的 bx）
+// 亲手操作：照着文件夹里的资料，填三家应用市场的上架表单（虚构站点，输出格式来自真实运行的 rsf）
 // =====================================================================
 D.fPrompt = '拾光笔记 2.4.0 要上架三家应用市场，资料都在 release/v2.4，帮我填好提交。'
 D.fFiles = [
@@ -267,7 +267,7 @@ D.fFiles = [
   ['截图/', '01.png  02.png  03.png  04.png  05.png'],
 ]
 D.fRead = ['«a:⏵ bash» «w:cat release/v2.4/*.{json,md,txt}; ls release/v2.4/截图»', '«d:  … 版本 2.4.0 · 更新说明 4 条 · 软著号 · ICP 号 · 隐私政策链接 · 截图 5 张»']
-D.fTabCmd = 'bx tab list 应用'
+D.fTabCmd = 'rsf tab list 应用'
 D.fTabOut = [
   '«y:id    browser  title»',
   't192  vivaldi  发布新版本 - 星河应用市场开发者后台',
@@ -279,7 +279,7 @@ D.fStores = [
   { label: '青橙 · 版本发布', url: 'open.qingcheng.cn/app/release/step1', c: 'a' },
   { label: '蓝鲸 · 提交更新', url: 'developer.lanjing.com/apps/update', c: 'b' },
 ]
-D.fSnapCmd = 'bx snapshot -i -t t192'
+D.fSnapCmd = 'rsf snapshot -i -t t192'
 D.fSnapOut = [
   '«w:# 发布新版本 - 星河应用市场开发者后台»',
   '- heading "发布新版本 提交审核" [level=1]',
@@ -295,24 +295,24 @@ D.fSnapOut = [
   '- button "保存草稿" «a:[ref=e10]»',
   '- button "提交审核" «a:[ref=e11]»',
 ]
-D.fFillCmd = 'bx fill e2=2.4.0 e3=240 e4=@更新说明.md e5=效率办公 e6=https://shiguang.app/privacy e7=2026SR0123456 e9=false'
+D.fFillCmd = 'rsf fill e2=2.4.0 e3=240 e4=@更新说明.md e5=效率办公 e6=https://shiguang.app/privacy e7=2026SR0123456 e9=false'
 D.fFillOut = ['«G:ok: true»  «d:fields: e2 e3 e4 e5 e6 e7 e9 · 7 项»']
-D.fUpCmd = 'bx upload e8 截图/01.png 截图/02.png 截图/03.png 截图/04.png 截图/05.png'
+D.fUpCmd = 'rsf upload e8 截图/01.png 截图/02.png 截图/03.png 截图/04.png 截图/05.png'
 D.fUpOut = ['«G:ok: true»  «d:files: 5»']
 // 右边的“页面”：标签 / 编号 / 填进去的值
 D.fForm = [
   ['版本号', 'e2', '2.4.0'], ['版本代码', 'e3', '240'], ['更新说明', 'e4', '新增：AI 一键整理…'], ['应用分类', 'e5', '效率办公 ▾'],
   ['隐私政策链接', 'e6', 'https://shiguang.app/privacy'], ['软著登记号', 'e7', '2026SR0123456'], ['应用截图', 'e8', '▣ ▣ ▣ ▣ ▣  已上传 5 张'], ['含广告', 'e9', '☐'],
 ]
-D.fAmbCmd = 'bx click "getByRole(\'button\', { name: \'提交审核\' })" -t t192'
+D.fAmbCmd = 'rsf click "getByRole(\'button\', { name: \'提交审核\' })" -t t192'
 D.fAmbOut = [
   '«r:✗ [AMBIGUOUS] getByRole(\'button\', { name: "提交审核" }) 匹配到 2 个元素»',
   '«y:  → 候选：»',
   '«w:    1. button "提交审核"»  «d:(标题栏)»',
   '«w:    2. button "提交审核"»  «d:(底部操作栏)»',
-  '«y:  写得更具体一些（加 { exact: true }、换更精确的 CSS），或者 bx snapshot / bx find 拿编号»',
+  '«y:  写得更具体一些（加 { exact: true }、换更精确的 CSS），或者 rsf snapshot / rsf find 拿编号»',
 ]
-D.fClickCmd = 'bx click e11 -t t192'
+D.fClickCmd = 'rsf click e11 -t t192'
 D.fClickOut = [
   '«G:ok: true»',
   '«y:changes:»',
@@ -321,7 +321,7 @@ D.fClickOut = [
   '  dialogs:',
   '    - «w:"confirm: 确认提交审核？提交后 1–3 个工作日内完成审核，期间不能修改。 (accepted)"»',
 ]
-D.fNextCmd = 'bx click e4 -t t193   «d:# 下一步»'
+D.fNextCmd = 'rsf click e4 -t t193   «d:# 下一步»'
 D.fNextOut = [
   '«G:ok: true»',
   '«y:changes:»',
@@ -329,17 +329,17 @@ D.fNextOut = [
   '  «a:navigated: soft»',
   '  «a:note: 前端路由跳转（没有整页刷新），页面内容多半整体换了，建议重新 snapshot»',
 ]
-D.fStaleCmd = 'bx fill e1=2026SR0123456 -t t193'
+D.fStaleCmd = 'rsf fill e1=2026SR0123456 -t t193'
 D.fStaleOut = [
   '«r:✗ [STALE_REF] 编号 e1 无效：当前页面还没有 snapshot，或页面已经跳转»',
-  '«y:  → 先执行 `bx snapshot` 获取新编号»',
+  '«y:  → 先执行 `rsf snapshot` 获取新编号»',
 ]
 D.errCodes = ['NEED_LOGIN', 'BLOCKED', 'EMPTY', 'NOT_FOUND', 'CHANGED', 'AMBIGUOUS', 'STALE_REF', 'COVERED', 'NO_LIB']
 // trace：把整个过程录下来
 D.fTrace = [
-  ['bx trace start publish --goal "拾光笔记上架：星河、青橙、蓝鲸三家应用市场"', ['«G:● 录制中» publish «d:· 标签 t192 t193 t194»']],
+  ['rsf trace start publish --goal "拾光笔记上架：星河、青橙、蓝鲸三家应用市场"', ['«G:● 录制中» publish «d:· 标签 t192 t193 t194»']],
   ['«d:… snapshot · fill · upload · click …（就是上面那些操作）»', []],
-  ['bx trace stop', ['«d:duration: 41.66 · events: 27 · requests: 18»', '«y:report: ~/.bx/traces/publish/report.md»']],
+  ['rsf trace stop', ['«d:duration: 41.66 · events: 27 · requests: 18»', '«y:report: ~/.rsf/traces/publish/report.md»']],
 ]
 D.fReport = [
   '«w:## 操作时间线»',
@@ -356,15 +356,15 @@ D.fReport = [
 ]
 D.fScript = [
   '«d:// publish.js —— 照着 trace 的记录写的：三家应用市场一起填»',
-  '«m:const» app = readRelease(bx.args[0])   «d:// app.json、更新说明、资质、截图»',
-  '«m:const» xh = «m:await» bx.tab(«y:\'xinghe\'»)',
+  '«m:const» app = readRelease(rsf.args[0])   «d:// app.json、更新说明、资质、截图»',
+  '«m:const» xh = «m:await» rsf.tab(«y:\'xinghe\'»)',
   '«m:await» xh.fill({ «y:\'#ver\'»: app.version, «y:\'#notes\'»: app.notes, «y:\'#soft\'»: app.soft, … })',
   '«m:await» xh.upload(«y:\'#shots\'», app.shots)',
   '«m:await» xh.click(«y:\'#f > div.bar > button:nth-of-type(2)\'»)',
   '«d:// 青橙：三步向导，每步点“下一步”；这家的分类叫“效率”，不叫“效率办公”»',
   '«d:// 蓝鲸：字段名又不一样，截图只要 3 张 …»',
 ]
-D.fRunCmd = 'bx run -f publish.js release/v2.5'
+D.fRunCmd = 'rsf run -f publish.js release/v2.5'
 D.fRunOut = [
   '«G:星河:» 审核单号 XH-20261020-0057',
   '«G:青橙:» 工单 QC20261020-1183',
@@ -373,7 +373,7 @@ D.fRunOut = [
 ]
 
 // 管道（B 站，中文）
-D.pipeCmd = 'bx call bilibili.com search "xxx模型 实测" --limit 2 | bx call bilibili.com comments - --limit 3 -o table'
+D.pipeCmd = 'rsf call bilibili.com search "xxx模型 实测" --limit 2 | rsf call bilibili.com comments - --limit 3 -o table'
 D.pipeChips = ['【实测】xxx模型 写代码到底行不行', 'xxx模型 中文写作横评']
 D.pipeOut = [
   ['bvid', 'user', 'text', 'like'],
@@ -387,12 +387,12 @@ D.step1Code = [
   '«d:// step1.js —— 6 个站并行搜，规整成同一种结构 { site, title, url, heat }»',
   '«m:const» q = «y:\'xxx模型\'»',
   '«m:const» sources = {',
-  '  «G:x»:        () => bx.lib(«y:\'x.com\'»).search(q),',
-  '  «G:reddit»:   () => bx.lib(«y:\'reddit.com\'»).search(«y:\'xxx model\'»),',
-  '  «G:hn»:       () => bx.lib(«y:\'news.ycombinator.com\'»).search(«y:\'xxx model\'»),',
-  '  «G:zhihu»:    () => bx.lib(«y:\'zhihu.com\'»).search(q),',
-  '  «G:bilibili»: () => bx.lib(«y:\'bilibili.com\'»).search(q + «y:\' 评测\'»),',
-  '  «G:v2ex»:     () => bx.lib(«y:\'v2ex.com\'»).search(q),',
+  '  «G:x»:        () => rsf.lib(«y:\'x.com\'»).search(q),',
+  '  «G:reddit»:   () => rsf.lib(«y:\'reddit.com\'»).search(«y:\'xxx model\'»),',
+  '  «G:hn»:       () => rsf.lib(«y:\'news.ycombinator.com\'»).search(«y:\'xxx model\'»),',
+  '  «G:zhihu»:    () => rsf.lib(«y:\'zhihu.com\'»).search(q),',
+  '  «G:bilibili»: () => rsf.lib(«y:\'bilibili.com\'»).search(q + «y:\' 评测\'»),',
+  '  «G:v2ex»:     () => rsf.lib(«y:\'v2ex.com\'»).search(q),',
   '}',
   '«d:// allSettled：一个站失败，不影响其它站»',
   '«m:const» settled = «m:await» Promise.«c:allSettled»(Object.values(sources).map(f => f()))',

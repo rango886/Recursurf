@@ -4,19 +4,19 @@
   {"id":"p3","zh":"好不容易打开一页，几十万字符的 HTML 灌进来，上下文当场爆掉。","en":"When a page finally opens, hundreds of thousands of characters of HTML pour in — and the context blows up."},
   {"id":"p4","zh":"最后它只能说：“抱歉，我无法访问这些网站。”","en":"In the end, all it can say is: \"Sorry, I can't access these sites.\"","say":"最后它只能说，抱歉，我无法访问这些网站。"},
   {"id":"p5","zh":"可这些网站，你的浏览器里，全都登录着。","en":"Yet your own browser is logged in to every one of them."},
-  {"id":"logo1","zh":"BrowserX —— 让 AI agent 借你的浏览器上网。","en":"BrowserX — let your AI agent browse the web through your own browser.","say":"BrowserX。让 AI agent，借你的浏览器上网。"},
+  {"id":"logo1","zh":"Recursurf —— 让 AI agent 借你的浏览器上网。","en":"Recursurf — let your AI agent browse the web through your own browser.","say":"Recursurf。让 AI agent，借你的浏览器上网。"},
 
   {"id":"h1","zh":"同一句话，再问一次。这回，它借你的浏览器，同时打开六个网站。","en":"Same question, one more time. Now it borrows your browser and opens six sites at once."},
   {"id":"h2","zh":"交回来一份报告：哪里在夸，哪里在骂，跑分和实测哪里对不上。每一条，都带出处。","en":"Back comes a report: who's praising, who's complaining, where benchmarks and real use disagree. Every point cited."},
   {"id":"m1","zh":"技术排查、新闻舆情、股票异动，也都是一句话的事。","en":"Tech triage, public opinion, stock moves — each just one sentence away."},
 
-  {"id":"a1","zh":"BrowserX 的办法很直接：不另起一个浏览器，借你平时用的那个。","en":"BrowserX's answer is simple: don't spin up another browser — borrow the one you already use."},
-  {"id":"a2","zh":"比如 AI 想读一条知乎回答，只要敲一条 bx 命令。","en":"Say the AI wants to read a Zhihu answer. It just types one bx command."},
+  {"id":"a1","zh":"Recursurf 的办法很直接：不另起一个浏览器，借你平时用的那个。","en":"Recursurf's answer is simple: don't spin up another browser — borrow the one you already use."},
+  {"id":"a2","zh":"比如 AI 想读一条知乎回答，只要敲一条 rsf 命令。","en":"Say the AI wants to read a Zhihu answer. It just types one rsf command."},
   {"id":"a3","zh":"命令交给后台常驻的 daemon，它通过浏览器插件，在你的浏览器里开个标签。","en":"The command goes to a background daemon, which — through a browser extension — opens a tab in your browser.","say":"命令交给后台常驻的 daemon，它通过浏览器插件，在你的浏览器里，开个标签。"},
   {"id":"a4","zh":"几十万字符的页面，变成几行精简的文字，回到 AI 手里。","en":"A page of hundreds of thousands of characters comes back to the AI as a few compact lines."},
   {"id":"a5","zh":"登录用的是你的，所以对网站来说，来的就是你本人。","en":"It's your login — so to the website, it's simply you."},
 
-  {"id":"r1","zh":"先看最常用的 bx read：一个网页，讲了什么。","en":"Start with the everyday tool, bx read: what is this page about?","say":"先看最常用的，bx read。一个网页，讲了什么。"},
+  {"id":"r1","zh":"先看最常用的 rsf read：一个网页，讲了什么。","en":"Start with the everyday tool, rsf read: what is this page about?","say":"先看最常用的，rsf read。一个网页，讲了什么。"},
   {"id":"r2","zh":"一个 B 站视频页，原始 HTML 有二十三万字符。","en":"A Bilibili video page: 230,000 characters of raw HTML."},
   {"id":"r3","zh":"read 之后，只剩两千字，该有的一样不少。","en":"After read: about 2,000. Everything that matters is still there."},
   {"id":"r4","zh":"标题、作者、播放数据，评论有多少条、怎么展开，一眼就清楚。","en":"Title, author, stats, how many comments and how to expand them — all at a glance."},
@@ -31,8 +31,8 @@
 
   {"id":"f0","zh":"有些活没有接口，只能一页页去填。比如新版本上架：三家应用市场，三套不一样的表单。","en":"Some jobs have no API — just forms. Like shipping a new version: three app stores, three different forms."},
   {"id":"f1","zh":"要填的资料散在文件夹里：版本号、更新说明、软著编号、隐私政策，还有一堆截图。","en":"The details are scattered across a folder: version, release notes, copyright number, privacy policy, and a pile of screenshots."},
-  {"id":"f2","zh":"AI 先把文件读一遍，再用 bx tab list，找到你开着的三个后台。","en":"The AI reads the files, then uses bx tab list to find the three consoles you have open."},
-  {"id":"f3","zh":"bx snapshot 看一眼页面：每个输入框都带编号，哪些必填，一目了然。","en":"One bx snapshot: every field gets a number, and the required ones are obvious."},
+  {"id":"f2","zh":"AI 先把文件读一遍，再用 rsf tab list，找到你开着的三个后台。","en":"The AI reads the files, then uses rsf tab list to find the three consoles you have open."},
+  {"id":"f3","zh":"rsf snapshot 看一眼页面：每个输入框都带编号，哪些必填，一目了然。","en":"One rsf snapshot: every field gets a number, and the required ones are obvious."},
   {"id":"f4","zh":"一条 fill 填完一整页，截图用 upload 直接传上去。","en":"One fill completes the whole page; upload sends the screenshots straight in."},
   {"id":"f5","zh":"按名字点“提交审核”？页面上有两个。它不瞎猜，把候选列出来。","en":"Click \"Submit for review\" by name? There are two. It won't guess — it lists the candidates.","say":"按名字点提交审核？页面上有两个。它不瞎猜，把候选列出来。"},
   {"id":"f6","zh":"换成编号点，返回值直接告诉它：弹了确认框，页面也跳走了。","en":"Click by number, and the result says it all: a confirm dialog popped, and the page moved on."},
@@ -43,7 +43,7 @@
 
   {"id":"c1","zh":"函数和函数之间，可以用管道拼起来。","en":"Functions snap together with pipes."},
   {"id":"c2","zh":"B 站搜到的视频一行一条，流进下一个函数，评论就出来了。","en":"Bilibili search results flow line by line into the next function — and out come the comments."},
-  {"id":"c3","zh":"再往上一层，用 bx run 写几行 JS，把好几个网站自由组合。","en":"One level up, a few lines of JS in bx run combine as many sites as you like.","say":"再往上一层，用 bx run 写几行 JavaScript，把好几个网站自由组合。"},
+  {"id":"c3","zh":"再往上一层，用 rsf run 写几行 JS，把好几个网站自由组合。","en":"One level up, a few lines of JS in rsf run combine as many sites as you like.","say":"再往上一层，用 rsf run 写几行 JavaScript，把好几个网站自由组合。"},
 
   {"id":"x1","zh":"回到开头那个问题，看看 AI 是怎么一步步查清楚的。","en":"Back to the opening question — let's watch how the AI works it out, step by step."},
   {"id":"x2","zh":"第一步，广撒网：六个网站同时搜，结果规整成同一种格式。","en":"Step one, cast a wide net: six sites searched at once, results normalized into one format.","say":"第一步，广撒网。六个网站同时搜，结果规整成同一种格式。"},
@@ -55,5 +55,5 @@
 
   {"id":"t3","zh":"摸通的网站存成函数，做过的流程存成脚本。用得越多，它就越熟悉这个互联网。","en":"Sites it figures out become functions; jobs it has done become scripts. The more you use it, the better it knows the web."},
 
-  {"id":"o1","zh":"BrowserX —— 给 AI 一双能上网的手。","en":"BrowserX — give your AI hands for the web.","say":"BrowserX。给 AI，一双能上网的手。"}
+  {"id":"o1","zh":"Recursurf —— 给 AI 一双能上网的手。","en":"Recursurf — give your AI hands for the web.","say":"Recursurf。给 AI，一双能上网的手。"}
 ]

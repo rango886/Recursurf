@@ -14,7 +14,7 @@ function shake(t, list, amp = 8) {   // 震动：list = [[t0, dur]]
   return [(hash(Math.floor(t * 60)) - .5) * amp * v * 2, (hash(Math.floor(t * 60) + 5) - .5) * amp * v * 2]
 }
 function counter(t, t0, t1, a, b) { return Math.round(lerp(a, b, E.out(prog(t, t0, t1)))).toLocaleString('en-US') }
-const LOGO = () => asciiArt('logo', 'BrowserX', { cols: 92, font: '900 220px "Arial Black","Segoe UI Black",sans-serif' })
+const LOGO = () => asciiArt('logo', 'Recursurf', { cols: 92, font: '900 220px "Arial Black","Segoe UI Black",sans-serif' })
 const logoGrad = k => `hsl(${lerp(150, 190, k)},100%,${lerp(72, 58, k)}%)`
 function logoCells() {
   if (logoCells.c) return logoCells.c
@@ -121,7 +121,7 @@ chapter('boot', '00 · BOOT')
 sfx(.15, 'power')
 const P_pain = panel({ x: 0, y: 0, pad: 3000, t0: -1, fi: 0 })
 const bootT = lanePanelTerm({ cols: 90, rows: 12, size: 24 })
-bootT.put(.9, ['«d:BX-BIOS v2.0   (c) BrowserX project»', ''])
+bootT.put(.9, ['«d:RSF-BIOS v2.0   (c) Recursurf project»', ''])
 bootT.out(1.3, [
   '检测浏览器 ..........  «G:vivaldi [extension] ✓»',
   '连接 daemon .........  «G:ok»',
@@ -237,7 +237,7 @@ P_pain.draw = (ctx, t) => {
       drawArt(ctx, LOGO(), 960, 360, size, 'G', { grad: logoGrad, glow: 18 * pulse })
       fade(ctx, prog(t, oLogo + 2.6, oLogo + 3.4), () => {
         txt(ctx, '给 AI agent 用的浏览器', 960, 600, 54, 'w', { align: 'center', weight: 'bold' })
-        txt(ctx, 'bx · 借你已登录的浏览器上网 · 读网页 · 取数据 · 操作页面 · 跨站调研', 960, 680, 28, 'g', { align: 'center' })
+        txt(ctx, 'rsf · 借你已登录的浏览器上网 · 读网页 · 取数据 · 操作页面 · 跨站调研', 960, 680, 28, 'g', { align: 'center' })
       })
     }
   }
@@ -259,7 +259,7 @@ HT.put(ho + .6, ['«d:agent · ~/work»', ''])
 const h1 = say('h1', .3)
 HT.type(h1 + .1, D.zPrompt, { prompt: U(''), cps: 24, color: 'w' })
 const s1 = sayAt('h1', .5)
-HT.out(s1, ['', A('用你的浏览器，6 个网站同时查。'), TOOL('bx run -f step1.js')], { lps: 10 })
+HT.out(s1, ['', A('用你的浏览器，6 个网站同时查。'), TOOL('rsf run -f step1.js')], { lps: 10 })
 sfx(s1 + .3, 'riser', { dur: 1.2 })
 const ZK = D.zKeys
 const ZURL = { x: 'x.com/search?q=xxx模型', reddit: 'reddit.com/search?q=xxx+model', hn: 'hn.algolia.com/?q=xxx+model', zhihu: 'zhihu.com/search?q=xxx模型', bilibili: 'search.bilibili.com/all?keyword=xxx模型 评测', v2ex: 'v2ex.com/?q=xxx模型' }
@@ -269,7 +269,7 @@ const s1done = s1 + 2.9
 HT.out(s1done, ['«G:✓» ' + D.zStatus], { lps: 8 })
 sfx(s1done, 'ding'); MUSIC.push({ t: s1 + .9, lv: 3 })
 const h2 = say('h2', .4)
-HT.out(h2 - .2, [TOOL('bx run -f step2.js "1,6,13"'), ...D.zStep2, TOOL('bx run -f step3.js'), ...D.zStep3], { lps: 14 })
+HT.out(h2 - .2, [TOOL('rsf run -f step2.js "1,6,13"'), ...D.zStep2, TOOL('rsf run -f step3.js'), ...D.zStep3], { lps: 14 })
 const hk = sayAt('h2', .22)
 sfx(hk, 'boom'); flashAt(hk, .4, .5); MUSIC.push({ t: hk, lv: 3 })
 const m1 = say('m1', .4)
@@ -402,20 +402,20 @@ P_arch.draw = (ctx, t) => {
     frame(ctx, EB.x, EB.y, EB.w, EB.h, { title: '浏览器插件', color: 'a', lw: 3, dots: false })
     mtxt(ctx, '«a:把标签的控制权交给 daemon»', EB.x + 30, EB.y + 34, 24)
   })
-  wire(ctx, AB.x + AB.w, 430, DB.x, 430, prog(t, tDae - .1, tDae + .3), 'm', 'bx（跑完就退出）', { dy: 18 })
+  wire(ctx, AB.x + AB.w, 430, DB.x, 430, prog(t, tDae - .1, tDae + .3), 'm', 'rsf（跑完就退出）', { dy: 18 })
   wire(ctx, DB.x + DB.w, 380, EB.x, 85, prog(t, tExt, tExt + .4), 'c', 'WebSocket', { dx: -40 })
   wire(ctx, EB.x + 290, EB.y + EB.h, EB.x + 290, BB1.y, prog(t, tExt + .2, tExt + .5), 'a')
   // 命令包：去 → 回
-  packet(ctx, t, tDae + .1, tTab - tDae, [[AB.x + AB.w, 430], [DB.x + DB.w / 2, 430], [DB.x + DB.w, 380], [EB.x, 85], [EB.x + 290, 85], [EB.x + 290, BB1.y + 60]], 'bx read …/question/7203316845', 'm')
+  packet(ctx, t, tDae + .1, tTab - tDae, [[AB.x + AB.w, 430], [DB.x + DB.w / 2, 430], [DB.x + DB.w, 380], [EB.x, 85], [EB.x + 290, 85], [EB.x + 290, BB1.y + 60]], 'rsf read …/question/7203316845', 'm')
   packet(ctx, t, tBack, 1.6, [[EB.x + 290, BB1.y + 60], [EB.x + 290, 85], [EB.x, 85], [DB.x + DB.w, 380], [DB.x + DB.w / 2, 430], [AB.x + AB.w, 430]], '~2,000 字', 'G')
   // 结语
   fade(ctx, prog(t, sayAt('a5', .4), sayAt('a5', .4) + .6), () => txt(ctx, '对网站来说：来的就是你本人', 640, 720, 40, 'y', { align: 'center', weight: 'bold', glow: 16 }))
 }
 
 // ===================================================================
-// 04 bx read（镜头钻进 agent 的终端）
+// 04 rsf read（镜头钻进 agent 的终端）
 // ===================================================================
-chapter('read', '04 · bx read')
+chapter('read', '04 · rsf read')
 const rd = mark('read')
 MUSIC.push({ t: rd, lv: 2 })
 const P_read = panel({ parent: P_arch, x: AB.x + 20, y: AB.y + 44, s: (AB.w - 40) / VW, w: 3840, t0: rd - .1, fi: .5 })
@@ -436,7 +436,7 @@ const r3 = say('r3', .2)
 const r4 = say('r4', .4)
 T1.mark(r4 + .1, r4 + 1.6, '# 【官方 MV】')
 T1.mark(r4 + 1.6, r4 + 3.1, 'stat: 播放')
-T1.mark(r4 + 3.1, r4 + 5.4, '分段（bx read')
+T1.mark(r4 + 3.1, r4 + 5.4, '分段（rsf read')
 T1.mark(r4 + 3.5, r4 + 5.4, 'comments: 评论', 'c')
 const pan1 = wait(0)
 camTo(pan1, 1.0, P_read, 2880, 430, 1920)
@@ -451,7 +451,7 @@ T2.mark(r5 + .2, r5 + 2.4, 'grep: 思考模式|测试集')
 T2.mark(r5 + 2.4, r5 + 4.6, '〔@6831〕')
 const r6 = say('r6', .3)
 T2.mark(r6 + .1, r6 + 5.2, '〔@14102〕')
-T2.type(r6 + 2.6, 'bx read https://36kr.com/p/2961530218 «a:--offset 14102»', { cps: 40, enter: false, color: 'd' })
+T2.type(r6 + 2.6, 'rsf read https://36kr.com/p/2961530218 «a:--offset 14102»', { cps: 40, enter: false, color: 'd' })
 const pan2 = wait(0)
 camTo(pan2, 1.0, P_read, 960, 470, 1920)
 sfx(pan2, 'whoosh', { dur: .9 })
@@ -461,7 +461,7 @@ T1.mark(r7 + .1, r7 + 2.6, '这个网站有函数库 bilibili.com')
 T1.mark(r7 + 2.6, r7 + 9, 'comments(id', 'c')
 const SOUP2 = wrapCells(parseMk(D.htmlSoup.repeat(4), 'd'), 168)
 P_read.draw = (ctx, t, p, ps) => {
-  frame(ctx, 40, 40, 1840, 780, { title: '~/work · bx read', color: 'g', double: true })
+  frame(ctx, 40, 40, 1840, 780, { title: '~/work · rsf read', color: 'g', double: true })
   if (t > r2 && t < cmp + 1.4) {
     const k = prog(t, cmp, cmp + 1.0)
     ctx.save()
@@ -510,7 +510,7 @@ const l2 = say('l2', .2)
 CODE.mark(l2 + .1, l2 + 2.6, 'limit = 50')
 CODE.mark(l2 + 2.6, l2 + 5.6, '@example')
 const ANN = new Term({ cols: 68, rows: 6, size: 19, prompt: '', cursor: false })
-ANN.put(l2 + .5, ['«d:参数类型看默认值：limit = 50 → 数字»', '«d:帮助信息从签名和注释生成，不用另外声明»', '', '«G:$» bx call bilibili.com comments BV1GJ411x7h7 «a:--limit 20»'])
+ANN.put(l2 + .5, ['«d:参数类型看默认值：limit = 50 → 数字»', '«d:帮助信息从签名和注释生成，不用另外声明»', '', '«G:$» rsf call bilibili.com comments BV1GJ411x7h7 «a:--limit 20»'])
 const TEST = new Term({ cols: 68, rows: 6, size: 19, prompt: '', cursor: false })
 TEST.out(l2 + 2.8, D.libTest, { lps: 8 })
 sfx(l2 + 3.4, 'ding')
@@ -529,7 +529,7 @@ P_lib.draw = (ctx, t) => {
     frame(ctx, 1180, 70, 700, 230, { title: '签名 = 说明书', color: 'a', dots: false })
     ANN.draw(ctx, t, 1205, 115)
     if (t > l2 + 2.6) {
-      frame(ctx, 1180, 360, 700, 210, { title: 'bx lib test', color: 'G', dots: false })
+      frame(ctx, 1180, 360, 700, 210, { title: 'rsf lib test', color: 'G', dots: false })
       TEST.draw(ctx, t, 1205, 405)
     }
     ctx.restore()
@@ -537,7 +537,7 @@ P_lib.draw = (ctx, t) => {
   if (t > l3) {
     const k = E.out(prog(t, l3, l3 + .5))
     ctx.save(); ctx.translate((1 - k) * 600, 0); ctx.globalAlpha *= k
-    frame(ctx, 1160, 70, 720, 700, { title: '站点笔记 · bx lib list bilibili.com', color: 'y', dots: false })
+    frame(ctx, 1160, 70, 720, 700, { title: '站点笔记 · rsf lib list bilibili.com', color: 'y', dots: false })
     NOTES.draw(ctx, t, 1185, 120)
     ctx.restore()
   }
@@ -698,7 +698,7 @@ P_form.draw = (ctx, t) => {
     if (cur) mtxt(ctx, '«d:杭州拾光科技有限公司 · »«G:已登录»', 1110, 600, 22)
   })
   // 卡片 1：终端 + 页面
-  frame(ctx, CW + 40, 40, 1840, 780, { title: 'bx snapshot → fill → upload', color: 'g', double: true })
+  frame(ctx, CW + 40, 40, 1840, 780, { title: 'rsf snapshot → fill → upload', color: 'g', double: true })
   F1.draw(ctx, t, CW + 70, 100)
   {
     const x = CW + 1060, y = 70, w = 800
@@ -733,14 +733,14 @@ P_form.draw = (ctx, t) => {
   })
   // 卡片 4：主题句
   if (t > pc4 - .3) {
-    frame(ctx, 4 * CW + 40, 40, 1840, 780, { title: 'bx · 输出设计', color: 'g', double: true })
+    frame(ctx, 4 * CW + 40, 40, 1840, 780, { title: 'rsf · 输出设计', color: 'g', double: true })
     drawArt(ctx, F1ART(), 4 * CW + 960, 370, 10.5, 'G', { reveal: E.out(prog(t, pc4 + .3, pc4 + 1.8)), t, seed: 3 })
     fade(ctx, prog(t, pc4 + 1.2, pc4 + 1.8), () => txt(ctx, '短 · 准 · 带编号 · 带下一步', 4 * CW + 960, 700, 34, 'a', { align: 'center' }))
   }
   // 卡片 5：trace → 脚本
   if (t > pc5 - .3) {
     const X = 5 * CW
-    frame(ctx, X + 40, 40, 1000, 780, { title: 'bx trace · bx run', color: 'g', double: true })
+    frame(ctx, X + 40, 40, 1000, 780, { title: 'rsf trace · rsf run', color: 'g', double: true })
     LT.draw(ctx, t, X + 70, 100)
     if (t > tRep - .3) fade(ctx, E.out(prog(t, tRep - .3, tRep + .2)), () => {
       frame(ctx, X + 1080, 40, 800, 400, { title: 'report.md · 每一步都记下了', color: 'c', dots: false })
@@ -755,7 +755,7 @@ P_form.draw = (ctx, t) => {
 }
 
 // ===================================================================
-// 07 组合：管道 + bx run
+// 07 组合：管道 + rsf run
 // ===================================================================
 chapter('pipe', '07 · 可组合')
 const pp = mark('pipe')
@@ -789,8 +789,8 @@ P_pipe.draw = (ctx, t) => {
     txt(ctx, name, x + 280, 120, 46, c, { align: 'center', weight: 'bold' })
     txt(ctx, sub, x + 280, 190, 18, 'd', { align: 'center' })
   }
-  blk(bx1, 'search', 'bx call bilibili.com search "xxx模型 实测"', 'a')
-  blk(bx2, 'comments', 'bx call bilibili.com comments -', 'c')
+  blk(bx1, 'search', 'rsf call bilibili.com search "xxx模型 实测"', 'a')
+  blk(bx2, 'comments', 'rsf call bilibili.com comments -', 'c')
   if (k >= .99) {
     txt(ctx, '│', 960, 140, 60, 'G', { align: 'center', weight: 'bold', glow: 20 })
     setFont(ctx, 22); ctx.fillStyle = COL.d
@@ -806,7 +806,7 @@ P_pipe.draw = (ctx, t) => {
   }
   frame(ctx, 40, 360, 1840, 460, { title: 'pipe · 一行一条 JSON', color: 'g', double: true })
   PT.draw(ctx, t, 80, 410)
-  frame(ctx, 1960, 40, 1840, 780, { title: 'step1.js · bx run -f step1.js', color: 'g', double: true })
+  frame(ctx, 1960, 40, 1840, 780, { title: 'step1.js · rsf run -f step1.js', color: 'g', double: true })
   SC.draw(ctx, t, 2000, 100)
   BRICK.forEach((b, i) => {
     const kk = E.back(clamp((t - c3 - .6 - i * .45) / .5)); if (kk <= 0) return
@@ -835,7 +835,7 @@ RT.put(rs + .9, ['«d:agent · ~/work»', ''])
 const x1 = say('x1', .2)
 RT.type(x1 + .3, D.zPrompt, { prompt: U(''), cps: 22, color: 'w' })
 const x2 = say('x2', .3)
-RT.out(x2 + .1, ['', A('第 1 步：6 个站并行搜。'), TOOL('bx run -f step1.js')], { lps: 12 })
+RT.out(x2 + .1, ['', A('第 1 步：6 个站并行搜。'), TOOL('rsf run -f step1.js')], { lps: 12 })
 camTo(x2 + .3, 1.8, P_res, ...FULL)
 sfx(x2 + .3, 'whoosh', { dur: 1.5 })
 const go = x2 + 1.0
@@ -844,7 +844,7 @@ const RLP = { x: [50, 60], reddit: [50, 530], hn: [50, 1000], zhihu: [2250, 60],
 const RL = ZK.map((k, i) => {
   const L = D.zl[k], [x, y] = RLP[k]
   const T = lanePanelTerm({ cols: 66, rows: 11, size: 26, lh: 1.25 })
-  T.put(go - .1, [`«${L.color}:⏵ bx.lib('${L.name}')»`, ''])
+  T.put(go - .1, [`«${L.color}:⏵ rsf.lib('${L.name}')»`, ''])
   const done = T.out(go + i * .15, L.items.map(s => cutW(plain(s), 64)).concat(['', `«G:✓ ${L.n} 条 → { site, title, url, heat }»`]), { lps: 7, sound: i === 0, sv: .5 })
   return { k, x, y, T, L, done }
 })
@@ -855,13 +855,13 @@ MUSIC.push({ t: x3, lv: 3 })
 const tSkip = sayAt('x3', .35)
 RT.out(sayAt('x3', .45), D.zPick, { lps: 10 })
 const x4 = say('x4', .3)
-RT.out(x4 + .1, ['', A('第 2 步：深挖。'), TOOL('bx run -f step2.js "1,6,13"'), ...D.zStep2], { lps: 12 })
+RT.out(x4 + .1, ['', A('第 2 步：深挖。'), TOOL('rsf run -f step2.js "1,6,13"'), ...D.zStep2], { lps: 12 })
 const dig = x4 + .6
 sfx(dig, 'stream', { dur: 1.2, v: .7 })
 const tGreen = sayAt('x4', .45), tRed = sayAt('x4', .72), tDeep = tGreen - .4
 sfx(tGreen, 'ding'); sfx(tRed, 'hit')
 const x5 = say('x5', .3)
-RT.out(x5 + .1, ['', A('第 3 步：一手资料。'), TOOL('bx run -f step3.js'), ...D.zStep3], { lps: 10 })
+RT.out(x5 + .1, ['', A('第 3 步：一手资料。'), TOOL('rsf run -f step3.js'), ...D.zStep3], { lps: 10 })
 const tSrc = [sayAt('x5', .3), sayAt('x5', .55), sayAt('x5', .8)]
 tSrc.forEach(t => sfx(t, 'pop', { f: 700 }))
 const x6 = say('x6', .5)
@@ -969,7 +969,7 @@ const t3 = say('t3', .8)
 // ===================================================================
 // 10 结尾
 // ===================================================================
-chapter('outro', '10 · BrowserX')
+chapter('outro', '10 · Recursurf')
 const ot = mark('outro')
 MUSIC.push({ t: ot - 1.5, lv: 4 })
 const conv = ot + .4
@@ -979,7 +979,7 @@ wait(2.3)
 const o1 = say('o1', .6)
 const OT = new Term({ cols: 50, rows: 4, size: 26 })
 OT.type(o1 + 3.4, 'npm install && npm link', { cps: 22 })
-OT.type(o1 + 5.0, 'bx read «a:<任何网页>»', { cps: 18 })
+OT.type(o1 + 5.0, 'rsf read «a:<任何网页>»', { cps: 18 })
 wait(7.5)
 const end = mark('end')
 MUSIC.push({ t: end - 1.6, lv: 0 })
@@ -1023,7 +1023,7 @@ P_stars.draw = (ctx, t) => {
     else txt(ctx, `[ ${c} ]`, x, y + 50, 20, 'a', { align: 'center', weight: 'bold' })
   }
   ctx.globalAlpha = 1
-  if (t > l4 && t < fm) { ctx.globalAlpha = prog(t, l4 + 1, l4 + 2); txt(ctx, '50 个网站 · bx lib list', 960, 800, 26, 'w', { align: 'center' }); ctx.globalAlpha = 1 }
+  if (t > l4 && t < fm) { ctx.globalAlpha = prog(t, l4 + 1, l4 + 2); txt(ctx, '50 个网站 · rsf lib list', 960, 800, 26, 'w', { align: 'center' }); ctx.globalAlpha = 1 }
   if (convK > 0) {
     if (t < conv0 + 2.05) converge(ctx, t, conv0, 2.0, 960, 330, 24, i => { const s = STARS[i % STARS.length]; return [s.x + (hash(i) - .5) * 40, s.y + (hash(i + 1) - .5) * 20] })
     else {
