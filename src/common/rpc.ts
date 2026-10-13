@@ -2,7 +2,8 @@ import WebSocket from 'ws'
 import fs from 'node:fs'
 import path from 'node:path'
 import { spawn } from 'node:child_process'
-import { DAEMON_FILE, REPO_ROOT, RSF_HOME, ensureDir } from './paths.ts'
+import { fileURLToPath } from 'node:url'
+import { DAEMON_FILE, RSF_HOME, ensureDir } from './paths.ts'
 import { RsfError, sleep } from './util.ts'
 
 interface DaemonInfo {
@@ -80,7 +81,9 @@ export class RpcClient {
 export function startDaemonDetached() {
   ensureDir(RSF_HOME)
   const log = fs.openSync(path.join(RSF_HOME, 'daemon.log'), 'a')
-  const child = spawn(process.execPath, [path.join(REPO_ROOT, 'src', 'daemon', 'main.ts')], {
+  // 跟着当前文件走：源码运行时是 src/daemon/main.ts，发布包里是编译后的 dist/daemon/main.js
+  const ext = path.extname(fileURLToPath(import.meta.url))
+  const child = spawn(process.execPath, [fileURLToPath(new URL(`../daemon/main${ext}`, import.meta.url))], {
     detached: true,
     stdio: ['ignore', log, log],
     windowsHide: true,

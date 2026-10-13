@@ -2,8 +2,11 @@
   "name": "recursurf",
   "version": "2.0.0",
   "description": "AI-friendly browser control: multi-browser CLI, rsf run (JS with a global rsf), per-domain function libraries",
-  "main": "src/sdk/index.ts",
+  "main": "dist/sdk/index.js",
+  "types": "src/sdk/index.ts",
   "scripts": {
+    "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.build.json",
+    "prepack": "npm run build",
     "test": "node test/e2e.ts"
   },
   "keywords": [],
@@ -21,6 +24,15 @@
     "@types/ws": "^8.18.2",
     "typescript": "^7.0.2"
   },
+  "files": [
+    "bin",
+    "dist",
+    "src",
+    "lib",
+    "extension",
+    "skill",
+    "docs"
+  ],
   "bin": {
     "recursurf": "bin/recursurf.js",
     "rsf": "bin/recursurf.js"
